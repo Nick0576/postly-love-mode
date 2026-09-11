@@ -1,0 +1,67 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { AppShell } from "@/components/AppShell";
+import { PostCard } from "@/components/PostCard";
+import { supabase } from "@/integrations/supabase/client";
+import { POST_SELECT, type PostRow } from "@/lib/postly";
+
+const PAGE = 10;
+
+export const Route = createFileRoute("/_authenticated/feed")({
+  head: () => ({
+    meta: [
+      { title: "Home Feed — Postly" },
+      { name: "description", content: "See the latest posts from people you follow on Postly." },
+      { property: "og:title", content: "Home Feed — Postly" },
+      { property: "og:description", content: "See the latest posts on Postly." },
+    ],
+  }),
+  component: Feed,
+});
+
+function Feed() {
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
+    queryKey: ["feed"],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const { data, error } = await supabase
+        .from("posts")
+        .select(POST_SELECT)
+        .order("created_at", { ascending: false })
+        .range(pageParam, pageParam + PAGE - 1);
+      if (error) throw error;
+      return (data ?? []) as unknown as PostRow[];
+    },
+    getNextPageParam: (last, all) => (last.length < PAGE ? undefined : all.length * PAGE),
+  });
+
+  const sentinel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) void fetchNextPage();
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const posts = data?.pages.flat() ?? [];
+
+  return (
+    <AppShell title="Postly">
+      <div className="space-y-4">
+        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {!isLoading && posts.length === 0 && (
+          <p className="text-sm text-muted-foreground">No posts yet. Be the first to post.</p>
+        )}
+        {posts.map((p) => (
+          <PostCard key={p.id} post={p} />
+        ))}
+        <div ref={sentinel} className="h-8" />
+        {isFetchingNextPage && <p className="text-center text-sm text-muted-foreground">Loading…</p>}
+      </div>
+    </AppShell>
+  );
+}

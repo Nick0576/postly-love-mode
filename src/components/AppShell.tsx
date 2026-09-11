@@ -1,0 +1,40 @@
+import { Link } from "@tanstack/react-router";
+import { Home, Search, PlusSquare, MessageSquare, Settings } from "lucide-react";
+import type { ReactNode } from "react";
+import icon from "@/assets/postly-icon.png.asset.json";
+
+const items = [
+  { to: "/feed", label: "Home", Icon: Home },
+  { to: "/search", label: "Search", Icon: Search },
+  { to: "/compose", label: "Post", Icon: PlusSquare },
+  { to: "/messages", label: "Chats", Icon: MessageSquare },
+  { to: "/settings", label: "Settings", Icon: Settings },
+] as const;
+
+export function AppShell({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background/90 px-4 py-3 backdrop-blur">
+        <img src={icon.url} alt="Postly" className="h-8 w-8 rounded-lg" />
+        <h1 className="text-lg font-bold">{title}</h1>
+      </header>
+      <main className="mx-auto w-full max-w-xl px-4 pb-28 pt-4">{children}</main>
+      <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-xl items-center justify-around px-2 py-2">
+          {items.map(({ to, label, Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              activeProps={{ className: "text-primary" }}
+              inactiveProps={{ className: "text-muted-foreground" }}
+              className="flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-xs"
+            >
+              <Icon className="h-5 w-5" />
+              {label}
+            </Link>
+          ))}
+        </div>
+      </nav>
+    </div>
+  );
+}
