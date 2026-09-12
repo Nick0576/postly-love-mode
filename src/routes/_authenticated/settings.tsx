@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
@@ -102,6 +102,13 @@ function SettingsPage() {
             />
           </div>
           <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
+          {me && (
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/u/$username" params={{ username: me.username }}>
+                View Profile
+              </Link>
+            </Button>
+          )}
         </section>
 
         <section className="space-y-3 rounded-2xl border p-4">
