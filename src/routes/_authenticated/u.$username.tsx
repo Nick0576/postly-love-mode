@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PostCard } from "@/components/PostCard";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { POST_SELECT, currentUserId, type PostRow, type Profile } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/u/$username")({
 function ProfilePage() {
   const { username } = Route.useParams();
   const qc = useQueryClient();
+  const [showBubbleOverlay, setShowBubbleOverlay] = useState(false);
 
   useEffect(() => {
     applyTheme(getTheme());
@@ -107,7 +109,10 @@ function ProfilePage() {
               <div className="relative">
                 <Avatar url={data.profile.avatar_url} name={data.profile.display_name} size={56} />
                 {data.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
-                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-2xl shadow-md whitespace-nowrap">
+                  <div 
+                    className="absolute -top-10 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-2xl shadow-md whitespace-nowrap cursor-pointer"
+                    onClick={() => setShowBubbleOverlay(true)}
+                  >
                     {data.profile.chat_bubble_text}
                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rotate-45"></div>
                   </div>
@@ -176,6 +181,37 @@ function ProfilePage() {
             {!data.posts.length && <p className="text-sm text-muted-foreground">No posts yet.</p>}
           </div>
         </>
+      )}
+      
+      {showBubbleOverlay && data.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowBubbleOverlay(false)}
+        >
+          <div 
+            className="relative bg-background rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowBubbleOverlay(false)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-muted hover:bg-muted/80"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex flex-col items-center gap-6">
+              <Avatar url={data.profile.avatar_url} name={data.profile.display_name} size={120} />
+              <div className="relative">
+                <div className="bg-primary text-primary-foreground text-lg px-6 py-4 rounded-3xl shadow-lg text-center max-w-xs">
+                  {data.profile.chat_bubble_text}
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-primary rotate-45"></div>
+                </div>
+              </div>
+              <p className="text-center text-muted-foreground">
+                {data.profile.display_name || data.profile.username}
+              </p>
+            </div>
+          </div>
+        </div>
       )}
     </AppShell>
   );
