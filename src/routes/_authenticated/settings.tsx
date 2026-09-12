@@ -121,6 +121,30 @@ function SettingsPage() {
             Log out
           </Button>
         </section>
+
+        <section className="rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/20">
+          <h2 className="font-semibold text-red-900 dark:text-red-100">Danger Zone</h2>
+          <p className="mt-2 text-sm text-red-700 dark:text-red-300">
+            Deleting your account is permanent and cannot be undone.
+          </p>
+          <Button
+            variant="destructive"
+            className="mt-3"
+            onClick={async () => {
+              if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+                const uid = await currentUserId();
+                await supabase.from("profiles").delete().eq("id", uid);
+                await supabase.from("posts").delete().eq("user_id", uid);
+                await supabase.from("follows").delete().or(`follower_id.eq.${uid},following_id.eq.${uid}`);
+                await supabase.from("love_answers").delete().eq("user_id", uid);
+                await supabase.auth.signOut();
+                void navigate({ to: "/auth" });
+              }
+            }}
+          >
+            Delete Account
+          </Button>
+        </section>
       </div>
     </AppShell>
   );
