@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PostCard } from "@/components/PostCard";
 import { Avatar } from "@/components/Media";
@@ -24,27 +24,10 @@ export const Route = createFileRoute("/_authenticated/u/$username")({
 function ProfilePage() {
   const { username } = Route.useParams();
   const qc = useQueryClient();
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [isLongPressing, setIsLongPressing] = useState(false);
 
   useEffect(() => {
     applyTheme(getTheme());
   }, []);
-
-  const handleLongPressStart = () => {
-    setIsLongPressing(true);
-    longPressTimerRef.current = setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-  };
-
-  const handleLongPressEnd = () => {
-    setIsLongPressing(false);
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  };
 
   const { data } = useQuery({
     queryKey: ["profile", username],
@@ -124,18 +107,9 @@ function ProfilePage() {
               <div className="relative">
                 <Avatar url={data.profile.avatar_url} name={data.profile.display_name} size={56} />
                 {data.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
-                  <div 
-                    className={`absolute -top-12 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-4 py-2 rounded-2xl shadow-md whitespace-nowrap overflow-hidden max-w-48 ${isLongPressing ? 'animate-pulse' : ''}`}
-                    onMouseDown={handleLongPressStart}
-                    onMouseUp={handleLongPressEnd}
-                    onMouseLeave={handleLongPressEnd}
-                    onTouchStart={handleLongPressStart}
-                    onTouchEnd={handleLongPressEnd}
-                  >
-                    <div className="overflow-hidden w-full">
-                      <div className="animate-marquee whitespace-nowrap">
-                        {data.profile.chat_bubble_text}
-                      </div>
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-2xl shadow-md max-w-32 overflow-hidden">
+                    <div className="overflow-x-auto whitespace-nowrap scrollbar-hide">
+                      {data.profile.chat_bubble_text}
                     </div>
                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rotate-45"></div>
                   </div>
