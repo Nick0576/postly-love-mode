@@ -28,9 +28,15 @@ function Love() {
     queryKey: ["love"],
     queryFn: async () => {
       const me = await currentUserId();
-      const { data: rows } = await supabase.from("love_answers").select("user_id,answers");
+      const [{ data: rows }, { data: iFollow }, { data: followMe }] = await Promise.all([
+        supabase.from("love_answers").select("user_id,answers"),
+        supabase.from("follows").select("following_id").eq("follower_id", me),
+        supabase.from("follows").select("follower_id").eq("following_id", me),
+      ]);
+      const back = new Set((followMe ?? []).map((r) => r.follower_id));
+      const mutuals = new Set((iFollow ?? []).map((r) => r.following_id).filter((id) => back.has(id)));
       const mine = rows?.find((r) => r.user_id === me);
-      const others = (rows ?? []).filter((r) => r.user_id !== me);
+      const others = (rows ?? []).filter((r) => r.user_id !== me && mutuals.has(r.user_id));
       let matches: { profile: Profile; score: number }[] = [];
       if (mine && others.length) {
         const { data: people } = await supabase
