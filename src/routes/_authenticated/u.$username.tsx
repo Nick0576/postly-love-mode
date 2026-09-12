@@ -107,11 +107,10 @@ function ProfilePage() {
               <div className="relative">
                 <Avatar url={data.profile.avatar_url} name={data.profile.display_name} size={56} />
                 {data.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
-                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-t-2xl rounded-b-lg shadow-md max-w-32 overflow-hidden">
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-2xl shadow-md max-w-24 overflow-hidden">
                     <div className="whitespace-nowrap animate-marquee">
                       {data.profile.chat_bubble_text}
                     </div>
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rotate-45"></div>
                   </div>
                 )}
               </div>
