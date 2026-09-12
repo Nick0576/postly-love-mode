@@ -34,17 +34,31 @@ function ProfilePage() {
         .maybeSingle();
       if (!profile) return null;
       const p = profile as Profile;
-      const [posts, following, followers] = await Promise.all([
+      const [posts, following, followers, followsBack, loveAnswers] = await Promise.all([
         supabase.from("posts").select(POST_SELECT).eq("user_id", p.id).order("created_at", { ascending: false }).limit(20),
         supabase.from("follows").select("follower_id").eq("follower_id", me).eq("following_id", p.id).maybeSingle(),
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", p.id),
+        supabase.from("follows").select("follower_id").eq("follower_id", p.id).eq("following_id", me).maybeSingle(),
+        supabase.from("love_answers").select("user_id,answers").in("user_id", [me, p.id]),
       ]);
+      const isMutual = !!followsBack.data && !!following.data;
+      let loveMatch = null;
+      if (isMutual && loveAnswers.data && loveAnswers.data.length === 2) {
+        const myAnswers = loveAnswers.data.find((a) => a.user_id === me)?.answers as number[];
+        const theirAnswers = loveAnswers.data.find((a) => a.user_id === p.id)?.answers as number[];
+        if (myAnswers && theirAnswers) {
+          const same = myAnswers.filter((a, i) => a === theirAnswers[i]).length;
+          loveMatch = Math.round((same / 20) * 100);
+        }
+      }
       return {
         profile: p,
         me,
         posts: (posts.data ?? []) as unknown as PostRow[],
         isFollowing: !!following.data,
         followers: followers.count ?? 0,
+        isMutual,
+        loveMatch,
       };
     },
   });
@@ -108,6 +122,29 @@ function ProfilePage() {
               </div>
             )}
           </div>
+          {data.isMutual && (
+            <div className="mt-4 rounded-2xl border p-4 bg-gradient-to-r from-pink-50 to-red-50 dark:from-pink-950/20 dark:to-red-950/20">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">❤️</span>
+                <div>
+                  <h3 className="font-semibold text-lg">Love Mode</h3>
+                  {data.loveMatch !== null ? (
+                    <p className="text-sm text-muted-foreground">You and @{data.profile.username} are {data.loveMatch}% compatible!</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Answer questions to see your compatibility with @{data.profile.username}!</p>
+                  )}
+                </div>
+              </div>
+              {data.loveMatch !== null && data.loveMatch >= 70 && (
+                <p className="mt-3 text-sm font-medium text-red-600 dark:text-red-400">✨ Great match!</p>
+              )}
+              {data.loveMatch === null && (
+                <Button asChild className="mt-3" size="sm">
+                  <Link to="/love">Answer questions</Link>
+                </Button>
+              )}
+            </div>
+          )}
           <div className="mt-4 space-y-4">
             {data.posts.map((p) => (
               <PostCard

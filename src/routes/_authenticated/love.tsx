@@ -89,30 +89,35 @@ function Love() {
 
       {started && (
         <div className="space-y-3">
-          {LOVE_QUESTIONS.map((q, i) => {
-            const [a, b] = q.replace("?", "").split(" or ");
-            return (
-              <div key={q} className="rounded-xl border p-3">
-                <p className="text-sm font-medium">{q}</p>
-                <div className="mt-2 flex gap-2">
-                  {[a, b].map((opt, idx) => (
-                    <Button
-                      key={opt}
-                      size="sm"
-                      variant={answers[i] === idx ? "default" : "outline"}
-                      onClick={() => {
-                        const next = [...answers];
-                        next[i] = idx;
-                        setDraft(next);
-                      }}
-                    >
-                      {opt}
-                    </Button>
-                  ))}
-                </div>
+          {LOVE_QUESTIONS.map((q, i) => (
+            <div key={q} className="rounded-xl border p-3">
+              <p className="text-sm font-medium">{q}</p>
+              <div className="mt-2 flex gap-2">
+                <Button
+                  size="sm"
+                  variant={answers[i] === 1 ? "default" : "outline"}
+                  onClick={() => {
+                    const next = [...answers];
+                    next[i] = 1;
+                    setDraft(next);
+                  }}
+                >
+                  Yes
+                </Button>
+                <Button
+                  size="sm"
+                  variant={answers[i] === 0 ? "default" : "outline"}
+                  onClick={() => {
+                    const next = [...answers];
+                    next[i] = 0;
+                    setDraft(next);
+                  }}
+                >
+                  No
+                </Button>
               </div>
-            );
-          })}
+            </div>
+          ))}
           <Button className="w-full" onClick={() => void saveAll(answers)}>
             Save answers
           </Button>

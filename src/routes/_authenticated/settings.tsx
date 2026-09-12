@@ -120,12 +120,6 @@ function SettingsPage() {
           }}>
             Log out
           </Button>
-          <p
-            onClick={secretTap}
-            className="mt-6 cursor-default select-none text-center text-xs text-muted-foreground"
-          >
-            Postly
-          </p>
         </section>
       </div>
     </AppShell>
