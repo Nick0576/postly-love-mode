@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/Media";
 import {
@@ -30,7 +30,6 @@ import {
 } from "@/lib/accounts";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
-import { currentUserId } from "@/lib/postly";
 
 export function AccountSwitcher() {
   const navigate = useNavigate();
@@ -40,29 +39,6 @@ export function AccountSwitcher() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [chatBubble, setChatBubble] = useState<{ text: string; enabled: boolean } | null>(null);
-
-  useEffect(() => {
-    async function loadChatBubble() {
-      try {
-        const uid = await currentUserId();
-        const { data } = await supabase
-          .from("profiles")
-          .select("chat_bubble_text,chat_bubble_enabled")
-          .eq("id", uid)
-          .maybeSingle();
-        if (data) {
-          setChatBubble({
-            text: data.chat_bubble_text || "",
-            enabled: data.chat_bubble_enabled || false,
-          });
-        }
-      } catch (e) {
-        console.error("Failed to load chat bubble:", e);
-      }
-    }
-    loadChatBubble();
-  }, []);
 
   const handleSwitchAccount = async (accountId: string) => {
     try {
@@ -125,11 +101,6 @@ export function AccountSwitcher() {
             />
             {activeAccount && (
               <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-background" />
-            )}
-            {chatBubble?.enabled && chatBubble.text && (
-              <div className="absolute -top-2 -right-2 max-w-24 rounded-full bg-primary px-2 py-1 text-xs text-primary-foreground shadow-md">
-                {chatBubble.text}
-              </div>
             )}
           </Button>
         </DropdownMenuTrigger>

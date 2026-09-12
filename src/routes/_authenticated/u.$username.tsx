@@ -35,7 +35,7 @@ function ProfilePage() {
       const me = await currentUserId();
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled")
+        .select("id,username,display_name,bio,avatar_url")
         .eq("username", username)
         .maybeSingle();
       if (!profile) return null;
@@ -104,14 +104,7 @@ function ProfilePage() {
         <>
           <div className="rounded-2xl border p-4 shadow-soft">
             <div className="flex items-center gap-3">
-              <div className="relative">
-                <Avatar url={data.profile.avatar_url} name={data.profile.display_name} size={56} />
-                {data.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
-                  <div className="absolute -top-2 -right-2 max-w-32 rounded-full bg-primary px-2 py-1 text-xs text-primary-foreground shadow-md">
-                    {data.profile.chat_bubble_text}
-                  </div>
-                )}
-              </div>
+              <Avatar url={data.profile.avatar_url} name={data.profile.display_name} size={56} />
               <div className="min-w-0">
                 <h2 className="truncate text-lg font-bold">
                   {data.profile.display_name || data.profile.username}

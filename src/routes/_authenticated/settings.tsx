@@ -27,8 +27,6 @@ function SettingsPage() {
   const [theme, setThemeState] = useState<Theme>("light");
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
-  const [chatBubbleText, setChatBubbleText] = useState("");
-  const [chatBubbleEnabled, setChatBubbleEnabled] = useState(false);
   const [saved, setSaved] = useState(false);
   const taps = useRef(0);
 
@@ -44,14 +42,12 @@ function SettingsPage() {
       const uid = await currentUserId();
       const { data } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled")
+        .select("id,username,display_name,bio,avatar_url")
         .eq("id", uid)
         .maybeSingle();
       const p = data as Profile | null;
       setName(p?.display_name ?? "");
       setBio(p?.bio ?? "");
-      setChatBubbleText(p?.chat_bubble_text ?? "");
-      setChatBubbleEnabled(p?.chat_bubble_enabled ?? false);
       return p;
     },
   });
@@ -61,13 +57,7 @@ function SettingsPage() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ 
-          display_name: name, 
-          bio, 
-          chat_bubble_text: chatBubbleText,
-          chat_bubble_enabled: chatBubbleEnabled,
-          ...(avatar_url ? { avatar_url } : {}) 
-        })
+        .update({ display_name: name, bio, ...(avatar_url ? { avatar_url } : {}) })
         .eq("id", me.id);
       if (error) throw error;
       setSaved(true);
@@ -119,32 +109,6 @@ function SettingsPage() {
               </Link>
             </Button>
           )}
-        </section>
-
-        <section className="space-y-3 rounded-2xl border p-4">
-          <h2 className="font-semibold">Chat Bubble</h2>
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="chatBubbleEnabled"
-              checked={chatBubbleEnabled}
-              onChange={(e) => setChatBubbleEnabled(e.target.checked)}
-              className="h-4 w-4"
-            />
-            <Label htmlFor="chatBubbleEnabled">Enable chat bubble on profile</Label>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="chatBubbleText">Bubble text</Label>
-            <Input
-              id="chatBubbleText"
-              value={chatBubbleText}
-              onChange={(e) => setChatBubbleText(e.target.value)}
-              placeholder="Short text for your bubble..."
-              maxLength={50}
-            />
-            <p className="text-xs text-muted-foreground">Max 50 characters</p>
-          </div>
-          <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
         </section>
 
         <section className="space-y-3 rounded-2xl border p-4">
