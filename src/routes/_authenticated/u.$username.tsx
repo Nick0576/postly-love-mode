@@ -111,7 +111,7 @@ function ProfilePage() {
                     <div className="whitespace-nowrap animate-marquee">
                       {data.profile.chat_bubble_text}
                     </div>
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-2 h-2 bg-primary rotate-45 z-10"></div>
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-primary"></div>
                   </div>
                 )}
               </div>
