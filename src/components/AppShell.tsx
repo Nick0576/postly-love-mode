@@ -12,12 +12,13 @@ const items = [
   { to: "/settings", label: "Settings", Icon: Settings },
 ] as const;
 
-export function AppShell({ title, children }: { title: string; children: ReactNode }) {
+export function AppShell({ title, children, headerAction }: { title: string; children: ReactNode; headerAction?: ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background/90 px-4 py-3 backdrop-blur">
         <img src={icon.url} alt="Postly" className="h-8 w-8 rounded-lg" />
         <h1 className="text-lg font-bold flex-1">{title}</h1>
+        {headerAction}
         <AccountSwitcher />
       </header>
       <main className="mx-auto w-full max-w-xl px-4 pb-28 pt-4">{children}</main>
