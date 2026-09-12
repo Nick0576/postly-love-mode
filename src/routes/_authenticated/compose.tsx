@@ -27,8 +27,14 @@ function Compose() {
 
   async function submit() {
     const text = content.trim();
-    if (!text && !file) return toast.error("Write something first");
-    if (text.length > 1000) return toast.error("Post is too long (max 1000)");
+    if (!text && !file) {
+      toast.error("Write something first");
+      return;
+    }
+    if (text.length > 1000) {
+      toast.error("Post is too long (max 1000)");
+      return;
+    }
     setBusy(true);
     try {
       const user_id = await currentUserId();

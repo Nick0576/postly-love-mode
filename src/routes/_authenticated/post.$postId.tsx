@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { PostCard } from "@/components/PostCard";
 import { Avatar } from "@/components/Media";
@@ -32,9 +33,30 @@ export const Route = createFileRoute("/_authenticated/post/$postId")({
 
 function PostPage() {
   const { postId } = Route.useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [me, setMe] = useState<string | null>(null);
+
+  useEffect(() => {
+    currentUserId()
+      .then(setMe)
+      .catch(() => setMe(null));
+  }, []);
+
+  const remove = useMutation({
+    mutationFn: async () => {
+      const uid = await currentUserId();
+      const { error } = await supabase.from("posts").delete().eq("id", postId).eq("user_id", uid);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Post deleted");
+      void qc.invalidateQueries({ queryKey: ["feed"] });
+      void navigate({ to: "/feed" });
+    },
+  });
 
   const { data: post } = useQuery({
     queryKey: ["post", postId],
@@ -95,7 +117,18 @@ function PostPage() {
 
   return (
     <AppShell title="Post">
-      {post && <PostCard post={post} />}
+      {post && (
+        <PostCard
+          post={post}
+          onDelete={
+            post.user_id === me
+              ? () => {
+                  if (confirm("Delete this post?")) remove.mutate();
+                }
+              : undefined
+          }
+        />
+      )}
       <div className="mt-4">
         {replyTo && (
           <p className="mb-2 text-xs text-muted-foreground">
