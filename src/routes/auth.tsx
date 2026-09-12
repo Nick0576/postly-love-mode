@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import icon from "@/assets/postly-icon.png.asset.json";
+import {
+  getStoredAccounts,
+  saveStoredAccounts,
+  setActiveAccountId,
+  type StoredAccount,
+} from "@/lib/accounts";
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -36,8 +42,43 @@ function Auth() {
     setMsg(null);
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        
+        // Save account to storage
+        const session = data.session;
+        if (session) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name,username,avatar_url")
+            .eq("id", session.user.id)
+            .maybeSingle();
+
+          const account: StoredAccount = {
+            id: session.user.id,
+            email: session.user.email || email,
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            display_name: profile?.display_name || "",
+            username: profile?.username || "",
+            avatar_url: profile?.avatar_url,
+          };
+
+          const accounts = getStoredAccounts();
+          const existingIndex = accounts.findIndex(a => a.id === account.id);
+          
+          if (existingIndex >= 0) {
+            // Update existing account
+            accounts[existingIndex] = account;
+          } else if (accounts.length < 5) {
+            // Add new account
+            accounts.push(account);
+          }
+          
+          saveStoredAccounts(accounts);
+          setActiveAccountId(account.id);
+        }
+        
         void navigate({ to: "/feed" });
       } else if (mode === "signup") {
         const clean = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");

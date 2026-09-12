@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Home, Search, PlusSquare, MessageSquare, Settings } from "lucide-react";
 import type { ReactNode } from "react";
 import icon from "@/assets/postly-icon.png.asset.json";
+import { AccountSwitcher } from "@/components/AccountSwitcher";
 
 const items = [
   { to: "/feed", label: "Home", Icon: Home },
@@ -16,7 +17,8 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background/90 px-4 py-3 backdrop-blur">
         <img src={icon.url} alt="Postly" className="h-8 w-8 rounded-lg" />
-        <h1 className="text-lg font-bold">{title}</h1>
+        <h1 className="text-lg font-bold flex-1">{title}</h1>
+        <AccountSwitcher />
       </header>
       <main className="mx-auto w-full max-w-xl px-4 pb-28 pt-4">{children}</main>
       <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur">
