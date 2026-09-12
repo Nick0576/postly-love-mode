@@ -29,7 +29,7 @@ function ProfilePage() {
       const me = await currentUserId();
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url")
+        .select("id,username,display_name,bio,avatar_url,theme")
         .eq("username", username)
         .maybeSingle();
       if (!profile) return null;

@@ -41,7 +41,7 @@ function Love() {
       if (mine && others.length) {
         const { data: people } = await supabase
           .from("profiles")
-          .select("id,username,display_name,bio,avatar_url")
+          .select("id,username,display_name,bio,avatar_url,theme")
           .in("id", others.map((o) => o.user_id));
         matches = (people ?? [])
           .map((p) => {

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, uploadMedia, type Profile } from "@/lib/postly";
-import { getTheme, setTheme, type Theme } from "@/lib/theme";
+import { applyTheme, getTheme, loadThemeFromDatabase, setTheme, type Theme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -30,7 +30,15 @@ function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const taps = useRef(0);
 
-  useEffect(() => setThemeState(getTheme()), []);
+  useEffect(() => {
+    setThemeState(getTheme());
+    loadThemeFromDatabase().then((dbTheme) => {
+      if (dbTheme) {
+        setThemeState(dbTheme);
+        applyTheme(dbTheme);
+      }
+    });
+  }, []);
 
   const { data: me } = useQuery({
     queryKey: ["me"],
@@ -38,7 +46,7 @@ function SettingsPage() {
       const uid = await currentUserId();
       const { data } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url")
+        .select("id,username,display_name,bio,avatar_url,theme")
         .eq("id", uid)
         .maybeSingle();
       const p = data as Profile | null;
