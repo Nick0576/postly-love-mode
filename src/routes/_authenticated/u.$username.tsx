@@ -7,7 +7,7 @@ import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { POST_SELECT, currentUserId, type PostRow, type Profile } from "@/lib/postly";
-import { applyTheme, loadThemeFromDatabase } from "@/lib/theme";
+import { applyTheme, getTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/u/$username")({
   head: () => ({
