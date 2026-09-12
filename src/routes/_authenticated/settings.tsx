@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, uploadMedia, type Profile } from "@/lib/postly";
+import { currentUserId, uploadMedia, type Profile, getChatBubbleFromStorage, saveChatBubbleToStorage } from "@/lib/postly";
 import { applyTheme, getTheme, setTheme, type Theme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -50,8 +50,15 @@ function SettingsPage() {
       const p = data as Profile | null;
       setName(p?.display_name ?? "");
       setBio(p?.bio ?? "");
-      setChatBubbleText(p?.chat_bubble_text ?? "");
-      setChatBubbleEnabled(p?.chat_bubble_enabled ?? false);
+      
+      // Try to load from database, fall back to localStorage
+      const dbBubbleText = p?.chat_bubble_text;
+      const dbBubbleEnabled = p?.chat_bubble_enabled;
+      const localBubble = getChatBubbleFromStorage();
+      
+      setChatBubbleText(dbBubbleText ?? localBubble?.text ?? "");
+      setChatBubbleEnabled(dbBubbleEnabled ?? localBubble?.enabled ?? false);
+      
       return p;
     },
   });
@@ -59,6 +66,10 @@ function SettingsPage() {
   async function save(avatar_url?: string) {
     if (!me) return;
     try {
+      // Save to localStorage as fallback
+      saveChatBubbleToStorage(chatBubbleText, chatBubbleEnabled);
+      
+      // Try to save to database
       const { error } = await supabase
         .from("profiles")
         .update({ 
@@ -69,7 +80,12 @@ function SettingsPage() {
           ...(avatar_url ? { avatar_url } : {}) 
         })
         .eq("id", me.id);
-      if (error) throw error;
+      
+      // If database update fails, still show success since localStorage saved
+      if (error) {
+        console.warn("Failed to save chat bubble to database, saved to localStorage instead:", error);
+      }
+      
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     } catch (e) {

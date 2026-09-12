@@ -51,6 +51,24 @@ export function timeAgo(iso: string): string {
   return `${Math.floor(diff / 86400)}d`;
 }
 
+// Chat bubble localStorage fallback
+const CHAT_BUBBLE_KEY = "postly-chat-bubble";
+
+export function getChatBubbleFromStorage(): { text: string; enabled: boolean } | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const data = localStorage.getItem(CHAT_BUBBLE_KEY);
+    return data ? JSON.parse(data) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveChatBubbleToStorage(text: string, enabled: boolean): void {
+  if (typeof localStorage === "undefined") return;
+  localStorage.setItem(CHAT_BUBBLE_KEY, JSON.stringify({ text, enabled }));
+}
+
 export const LOVE_QUESTIONS = [
   "Do you believe in true love?",
   "Do you believe love can last forever?",
