@@ -199,13 +199,13 @@ function ProfilePage() {
               <X className="h-5 w-5" />
             </button>
             <div className="flex flex-col items-center gap-6">
-              <Avatar url={data.profile.avatar_url} name={data.profile.display_name} size={120} />
               <div className="relative">
                 <div className="bg-primary text-primary-foreground text-lg px-6 py-4 rounded-3xl shadow-lg text-center max-w-xs">
                   {data.profile.chat_bubble_text}
                   <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-primary rotate-45"></div>
                 </div>
               </div>
+              <Avatar url={data.profile.avatar_url} name={data.profile.display_name} size={120} />
               <p className="text-center text-muted-foreground">
                 {data.profile.display_name || data.profile.username}
               </p>
