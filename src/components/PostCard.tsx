@@ -3,7 +3,7 @@ import { MessageCircle } from "lucide-react";
 import { Avatar, Media } from "@/components/Media";
 import { timeAgo, type PostRow } from "@/lib/postly";
 
-export function PostCard({ post }: { post: PostRow }) {
+export function PostCard({ post, onDelete }: { post: PostRow; onDelete?: () => void }) {
   const author = post.profiles;
   return (
     <article className="rounded-2xl border bg-card p-4 shadow-soft">
@@ -21,6 +21,11 @@ export function PostCard({ post }: { post: PostRow }) {
             @{author?.username} · {timeAgo(post.created_at)}
           </p>
         </div>
+        {onDelete && (
+          <button onClick={onDelete} className="ml-auto text-xs text-destructive hover:underline">
+            Delete
+          </button>
+        )}
       </div>
       <p className="mt-3 whitespace-pre-wrap break-words text-[0.95rem]">{post.content}</p>
       <Media path={post.media_url} />
