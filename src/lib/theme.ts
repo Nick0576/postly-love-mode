@@ -23,7 +23,10 @@ async function saveThemeToDatabase(theme: Theme) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await supabase.from("profiles").update({ theme }).eq("id", user.id);
+      const { error } = await supabase.from("profiles").update({ theme }).eq("id", user.id);
+      if (error) {
+        console.error("Failed to save theme to database (column may not exist yet):", error);
+      }
     }
   } catch (e) {
     console.error("Failed to save theme to database:", e);
@@ -36,7 +39,7 @@ export async function loadThemeFromDatabase(): Promise<Theme | null> {
     if (user) {
       const { data, error } = await supabase.from("profiles").select("theme").eq("id", user.id).maybeSingle();
       if (error) {
-        console.error("Failed to load theme from database:", error);
+        console.error("Failed to load theme from database (column may not exist yet):", error);
         return null;
       }
       if (data?.theme) {

@@ -39,7 +39,7 @@ function SearchPage() {
       const [users, posts] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id,username,display_name,bio,avatar_url,theme")
+          .select("id,username,display_name,bio,avatar_url")
           .or(`username.ilike.%${term}%,display_name.ilike.%${term}%`)
           .limit(10),
         supabase.from("posts").select(POST_SELECT).ilike("content", `%${term}%`).limit(10),

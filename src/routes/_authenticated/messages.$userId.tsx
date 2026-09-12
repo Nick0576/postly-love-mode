@@ -46,7 +46,7 @@ function Chat() {
           )
           .order("created_at", { ascending: true })
           .limit(100),
-        supabase.from("profiles").select("id,username,display_name,bio,avatar_url,theme").eq("id", userId).maybeSingle(),
+        supabase.from("profiles").select("id,username,display_name,bio,avatar_url").eq("id", userId).maybeSingle(),
       ]);
       return { me, msgs: (msgs.data ?? []) as Msg[], person: person.data as Profile | null };
     },

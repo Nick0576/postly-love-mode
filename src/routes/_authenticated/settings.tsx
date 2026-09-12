@@ -48,7 +48,7 @@ function SettingsPage() {
       const uid = await currentUserId();
       const { data } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,theme")
+        .select("id,username,display_name,bio,avatar_url")
         .eq("id", uid)
         .maybeSingle();
       const p = data as Profile | null;
@@ -60,12 +60,18 @@ function SettingsPage() {
 
   async function save(avatar_url?: string) {
     if (!me) return;
-    await supabase
-      .from("profiles")
-      .update({ display_name: name, bio, ...(avatar_url ? { avatar_url } : {}) })
-      .eq("id", me.id);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ display_name: name, bio, ...(avatar_url ? { avatar_url } : {}) })
+        .eq("id", me.id);
+      if (error) throw error;
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    } catch (e) {
+      console.error("Failed to save profile:", e);
+      alert("Failed to save profile. Please try again.");
+    }
   }
 
   function secretTap() {

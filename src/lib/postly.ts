@@ -6,7 +6,7 @@ export type Profile = {
   display_name: string;
   bio: string;
   avatar_url: string | null;
-  theme: string;
+  theme?: string;
 };
 
 export type PostRow = {
@@ -19,7 +19,7 @@ export type PostRow = {
 };
 
 export const POST_SELECT =
-  "id,user_id,content,media_url,created_at,profiles(id,username,display_name,bio,avatar_url,theme)";
+  "id,user_id,content,media_url,created_at,profiles(id,username,display_name,bio,avatar_url)";
 
 export async function currentUserId(): Promise<string> {
   const { data } = await supabase.auth.getUser();

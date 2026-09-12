@@ -44,7 +44,7 @@ function Chats() {
       if (!ids.length) return [];
       const { data: people } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,theme")
+        .select("id,username,display_name,bio,avatar_url")
         .in("id", ids);
       return (people ?? []).map((p) => ({ profile: p as Profile, last: seen.get(p.id)! }));
     },
