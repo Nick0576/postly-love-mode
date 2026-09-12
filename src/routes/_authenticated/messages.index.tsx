@@ -1,9 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, timeAgo, type Profile } from "@/lib/postly";
+import { applyTheme, loadThemeFromDatabase } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/messages/")({
   head: () => ({
@@ -18,6 +20,12 @@ export const Route = createFileRoute("/_authenticated/messages/")({
 });
 
 function Chats() {
+  useEffect(() => {
+    loadThemeFromDatabase().then((dbTheme) => {
+      if (dbTheme) applyTheme(dbTheme);
+    });
+  }, []);
+
   const { data } = useQuery({
     queryKey: ["chats"],
     queryFn: async () => {

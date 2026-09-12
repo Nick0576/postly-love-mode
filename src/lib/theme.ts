@@ -34,8 +34,13 @@ export async function loadThemeFromDatabase(): Promise<Theme | null> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data } = await supabase.from("profiles").select("theme").eq("id", user.id).maybeSingle();
+      const { data, error } = await supabase.from("profiles").select("theme").eq("id", user.id).maybeSingle();
+      if (error) {
+        console.error("Failed to load theme from database:", error);
+        return null;
+      }
       if (data?.theme) {
+        localStorage.setItem(KEY, data.theme);
         return data.theme as Theme;
       }
     }

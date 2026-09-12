@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, uploadMedia } from "@/lib/postly";
+import { applyTheme, loadThemeFromDatabase } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/compose")({
   head: () => ({
@@ -24,6 +26,12 @@ function Compose() {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    loadThemeFromDatabase().then((dbTheme) => {
+      if (dbTheme) applyTheme(dbTheme);
+    });
+  }, []);
 
   async function submit() {
     const text = content.trim();

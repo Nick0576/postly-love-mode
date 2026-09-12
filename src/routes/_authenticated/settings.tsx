@@ -31,11 +31,13 @@ function SettingsPage() {
   const taps = useRef(0);
 
   useEffect(() => {
-    setThemeState(getTheme());
     loadThemeFromDatabase().then((dbTheme) => {
       if (dbTheme) {
         setThemeState(dbTheme);
         applyTheme(dbTheme);
+      } else {
+        setThemeState(getTheme());
+        applyTheme(getTheme());
       }
     });
   }, []);

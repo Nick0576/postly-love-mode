@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PostCard } from "@/components/PostCard";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { POST_SELECT, currentUserId, type PostRow, type Profile } from "@/lib/postly";
+import { applyTheme, loadThemeFromDatabase } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/u/$username")({
   head: () => ({
@@ -22,6 +24,12 @@ export const Route = createFileRoute("/_authenticated/u/$username")({
 function ProfilePage() {
   const { username } = Route.useParams();
   const qc = useQueryClient();
+
+  useEffect(() => {
+    loadThemeFromDatabase().then((dbTheme) => {
+      if (dbTheme) applyTheme(dbTheme);
+    });
+  }, []);
 
   const { data } = useQuery({
     queryKey: ["profile", username],

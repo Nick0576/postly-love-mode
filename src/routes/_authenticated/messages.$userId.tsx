@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, type Profile } from "@/lib/postly";
+import { applyTheme, loadThemeFromDatabase } from "@/lib/theme";
 
 type Msg = { id: string; sender_id: string; content: string; created_at: string };
 
@@ -25,6 +26,12 @@ function Chat() {
   const { userId } = Route.useParams();
   const qc = useQueryClient();
   const [text, setText] = useState("");
+
+  useEffect(() => {
+    loadThemeFromDatabase().then((dbTheme) => {
+      if (dbTheme) applyTheme(dbTheme);
+    });
+  }, []);
 
   const { data } = useQuery({
     queryKey: ["chat", userId],

@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { LOVE_QUESTIONS, currentUserId, type Profile } from "@/lib/postly";
+import { applyTheme, loadThemeFromDatabase } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/love")({
   head: () => ({
@@ -23,6 +24,12 @@ export const Route = createFileRoute("/_authenticated/love")({
 function Love() {
   const qc = useQueryClient();
   const [draft, setDraft] = useState<number[] | null>(null);
+
+  useEffect(() => {
+    loadThemeFromDatabase().then((dbTheme) => {
+      if (dbTheme) applyTheme(dbTheme);
+    });
+  }, []);
 
   const { data } = useQuery({
     queryKey: ["love"],

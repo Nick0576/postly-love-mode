@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
+import { applyTheme, loadThemeFromDatabase } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/donate")({
   head: () => ({
@@ -14,6 +16,12 @@ export const Route = createFileRoute("/_authenticated/donate")({
 });
 
 function Donate() {
+  useEffect(() => {
+    loadThemeFromDatabase().then((dbTheme) => {
+      if (dbTheme) applyTheme(dbTheme);
+    });
+  }, []);
+
   return (
     <AppShell title="Donate a File">
       <iframe

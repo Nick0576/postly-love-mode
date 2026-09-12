@@ -26,11 +26,9 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   useEffect(() => {
-    applyTheme(getTheme());
     loadThemeFromDatabase().then((dbTheme) => {
-      if (dbTheme) {
-        applyTheme(dbTheme);
-      }
+      const theme = dbTheme || getTheme();
+      applyTheme(theme);
     });
     void supabase.auth.getSession().then(({ data }) => {
       if (data.session) window.location.replace("/feed");
