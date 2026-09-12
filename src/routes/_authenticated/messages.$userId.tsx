@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, type Profile } from "@/lib/postly";
-import { applyTheme, loadThemeFromDatabase } from "@/lib/theme";
+import { applyTheme, getTheme } from "@/lib/theme";
 
 type Msg = { id: string; sender_id: string; content: string; created_at: string };
 
