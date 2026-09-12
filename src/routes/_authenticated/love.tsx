@@ -68,7 +68,15 @@ function Love() {
 
   return (
     <AppShell title="Love Mode">
-      {!started && (
+      {locked && (
+        <div className="rounded-2xl border p-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            Love Mode unlocks once you and another person follow each other.
+          </p>
+        </div>
+      )}
+
+      {!started && !locked && (
         <div className="rounded-2xl border p-4 text-center">
           <p className="text-sm text-muted-foreground">
             Answer 20 quick questions. We only compare you with people you follow who follow you back.
