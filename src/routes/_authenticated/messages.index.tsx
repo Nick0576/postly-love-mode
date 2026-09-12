@@ -5,7 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, timeAgo, type Profile } from "@/lib/postly";
-import { applyTheme, loadThemeFromDatabase } from "@/lib/theme";
+import { applyTheme, getTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/messages/")({
   head: () => ({
