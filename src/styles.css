@@ -141,6 +141,6 @@
   }
 }
 
-@utility animate-marquee {
-  animation: marquee 5s linear infinite;
+.animate-marquee {
+  animation: marquee 3s linear infinite;
 }
