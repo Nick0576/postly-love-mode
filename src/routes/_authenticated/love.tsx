@@ -55,8 +55,9 @@ function Love() {
     },
   });
 
+  const locked = !!data && data.mutuals === 0;
   const answers = draft ?? data?.mine ?? null;
-  const started = answers !== null;
+  const started = answers !== null && !locked;
 
   async function saveAll(list: number[]) {
     if (!data) return;
