@@ -3,7 +3,7 @@ import { MessageCircle } from "lucide-react";
 import { Avatar, Media } from "@/components/Media";
 import { timeAgo, type PostRow } from "@/lib/postly";
 
-export function PostCard({ post, onDelete }: { post: PostRow; onDelete?: () => void }) {
+export function PostCard({ post, onDelete }: { post: PostRow; onDelete?: (() => void) | undefined }) {
   const author = post.profiles;
   return (
     <article className="rounded-2xl border bg-card p-4 shadow-soft">

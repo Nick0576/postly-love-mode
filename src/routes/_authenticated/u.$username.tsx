@@ -61,6 +61,15 @@ function ProfilePage() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
   });
 
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const uid = await currentUserId();
+      const { error } = await supabase.from("posts").delete().eq("id", id).eq("user_id", uid);
+      if (error) throw error;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
+  });
+
   if (data === null) {
     return (
       <AppShell title="Profile">
@@ -101,7 +110,17 @@ function ProfilePage() {
           </div>
           <div className="mt-4 space-y-4">
             {data.posts.map((p) => (
-              <PostCard key={p.id} post={p} />
+              <PostCard
+                key={p.id}
+                post={p}
+                onDelete={
+                  data.me === data.profile.id
+                    ? () => {
+                        if (confirm("Delete this post?")) remove.mutate(p.id);
+                      }
+                    : undefined
+                }
+              />
             ))}
             {!data.posts.length && <p className="text-sm text-muted-foreground">No posts yet.</p>}
           </div>
