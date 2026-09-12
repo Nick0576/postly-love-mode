@@ -51,7 +51,7 @@ function Love() {
           })
           .sort((a, b) => b.score - a.score);
       }
-      return { me, mine: (mine?.answers as number[] | undefined) ?? null, matches };
+      return { me, mine: (mine?.answers as number[] | undefined) ?? null, matches, mutuals: mutuals.size };
     },
   });
 
