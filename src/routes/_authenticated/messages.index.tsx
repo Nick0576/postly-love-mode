@@ -21,9 +21,7 @@ export const Route = createFileRoute("/_authenticated/messages/")({
 
 function Chats() {
   useEffect(() => {
-    loadThemeFromDatabase().then((dbTheme) => {
-      if (dbTheme) applyTheme(dbTheme);
-    });
+    applyTheme(getTheme());
   }, []);
 
   const { data } = useQuery({

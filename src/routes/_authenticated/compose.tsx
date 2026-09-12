@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, uploadMedia } from "@/lib/postly";
-import { applyTheme, loadThemeFromDatabase } from "@/lib/theme";
+import { applyTheme, getTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/compose")({
   head: () => ({
@@ -28,9 +28,7 @@ function Compose() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadThemeFromDatabase().then((dbTheme) => {
-      if (dbTheme) applyTheme(dbTheme);
-    });
+    applyTheme(getTheme());
   }, []);
 
   async function submit() {

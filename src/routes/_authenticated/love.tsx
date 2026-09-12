@@ -26,9 +26,7 @@ function Love() {
   const [draft, setDraft] = useState<number[] | null>(null);
 
   useEffect(() => {
-    loadThemeFromDatabase().then((dbTheme) => {
-      if (dbTheme) applyTheme(dbTheme);
-    });
+    applyTheme(getTheme());
   }, []);
 
   const { data } = useQuery({

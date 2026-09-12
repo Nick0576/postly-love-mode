@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, uploadMedia, type Profile } from "@/lib/postly";
-import { applyTheme, getTheme, loadThemeFromDatabase, setTheme, type Theme } from "@/lib/theme";
+import { applyTheme, getTheme, setTheme, type Theme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -31,15 +31,9 @@ function SettingsPage() {
   const taps = useRef(0);
 
   useEffect(() => {
-    loadThemeFromDatabase().then((dbTheme) => {
-      if (dbTheme) {
-        setThemeState(dbTheme);
-        applyTheme(dbTheme);
-      } else {
-        setThemeState(getTheme());
-        applyTheme(getTheme());
-      }
-    });
+    const theme = getTheme();
+    setThemeState(theme);
+    applyTheme(theme);
   }, []);
 
   const { data: me } = useQuery({

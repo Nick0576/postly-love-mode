@@ -28,9 +28,7 @@ function Chat() {
   const [text, setText] = useState("");
 
   useEffect(() => {
-    loadThemeFromDatabase().then((dbTheme) => {
-      if (dbTheme) applyTheme(dbTheme);
-    });
+    applyTheme(getTheme());
   }, []);
 
   const { data } = useQuery({

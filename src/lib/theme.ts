@@ -1,5 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
-
 export type Theme = "light" | "dark";
 
 const KEY = "postly-theme";
@@ -12,43 +10,8 @@ export function getTheme(): Theme {
 export function setTheme(theme: Theme) {
   localStorage.setItem(KEY, theme);
   applyTheme(theme);
-  saveThemeToDatabase(theme);
 }
 
 export function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("dark", theme === "dark");
-}
-
-async function saveThemeToDatabase(theme: Theme) {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { error } = await supabase.from("profiles").update({ theme }).eq("id", user.id);
-      if (error) {
-        console.error("Failed to save theme to database (column may not exist yet):", error);
-      }
-    }
-  } catch (e) {
-    console.error("Failed to save theme to database:", e);
-  }
-}
-
-export async function loadThemeFromDatabase(): Promise<Theme | null> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data, error } = await supabase.from("profiles").select("theme").eq("id", user.id).maybeSingle();
-      if (error) {
-        console.error("Failed to load theme from database (column may not exist yet):", error);
-        return null;
-      }
-      if (data?.theme) {
-        localStorage.setItem(KEY, data.theme);
-        return data.theme as Theme;
-      }
-    }
-  } catch (e) {
-    console.error("Failed to load theme from database:", e);
-  }
-  return null;
 }

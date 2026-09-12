@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { applyTheme, getTheme, loadThemeFromDatabase } from "@/lib/theme";
+import { applyTheme, getTheme } from "@/lib/theme";
 import icon from "@/assets/postly-icon.png.asset.json";
 
 export const Route = createFileRoute("/")({
@@ -26,10 +26,7 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   useEffect(() => {
-    loadThemeFromDatabase().then((dbTheme) => {
-      const theme = dbTheme || getTheme();
-      applyTheme(theme);
-    });
+    applyTheme(getTheme());
     void supabase.auth.getSession().then(({ data }) => {
       if (data.session) window.location.replace("/feed");
     });

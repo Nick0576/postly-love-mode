@@ -6,7 +6,7 @@ import { PostCard } from "@/components/PostCard";
 import { Avatar } from "@/components/Media";
 import { supabase } from "@/integrations/supabase/client";
 import { POST_SELECT, type PostRow, type Profile } from "@/lib/postly";
-import { applyTheme, loadThemeFromDatabase } from "@/lib/theme";
+import { applyTheme, getTheme } from "@/lib/theme";
 import { Input } from "@/components/ui/input";
 import { Link } from "@tanstack/react-router";
 
@@ -27,9 +27,7 @@ function SearchPage() {
   const term = q.trim();
 
   useEffect(() => {
-    loadThemeFromDatabase().then((dbTheme) => {
-      if (dbTheme) applyTheme(dbTheme);
-    });
+    applyTheme(getTheme());
   }, []);
 
   const { data } = useQuery({

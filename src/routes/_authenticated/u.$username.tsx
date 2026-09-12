@@ -26,9 +26,7 @@ function ProfilePage() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    loadThemeFromDatabase().then((dbTheme) => {
-      if (dbTheme) applyTheme(dbTheme);
-    });
+    applyTheme(getTheme());
   }, []);
 
   const { data } = useQuery({

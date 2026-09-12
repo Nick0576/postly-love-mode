@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { POST_SELECT, currentUserId, timeAgo, type PostRow, type Profile } from "@/lib/postly";
-import { applyTheme, loadThemeFromDatabase } from "@/lib/theme";
+import { applyTheme, getTheme } from "@/lib/theme";
 
 type CommentRow = {
   id: string;
@@ -41,9 +41,7 @@ function PostPage() {
   const [me, setMe] = useState<string | null>(null);
 
   useEffect(() => {
-    loadThemeFromDatabase().then((dbTheme) => {
-      if (dbTheme) applyTheme(dbTheme);
-    });
+    applyTheme(getTheme());
     currentUserId()
       .then(setMe)
       .catch(() => setMe(null));
