@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PostCard } from "@/components/PostCard";
 import { supabase } from "@/integrations/supabase/client";
-import { POST_SELECT, type PostRow } from "@/lib/postly";
+import { POST_SELECT, currentUserId, type PostRow } from "@/lib/postly";
 
 const PAGE = 10;
 
