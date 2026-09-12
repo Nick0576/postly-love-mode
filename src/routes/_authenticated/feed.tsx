@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PostCard } from "@/components/PostCard";
 import { supabase } from "@/integrations/supabase/client";
-import { POST_SELECT, type PostRow } from "@/lib/postly";
+import { POST_SELECT, currentUserId, type PostRow } from "@/lib/postly";
 
 const PAGE = 10;
 
@@ -21,6 +21,9 @@ export const Route = createFileRoute("/_authenticated/feed")({
 });
 
 function Feed() {
+  const qc = useQueryClient();
+  const [me, setMe] = useState<string | null>(null);
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
     queryKey: ["feed"],
     initialPageParam: 0,
@@ -34,6 +37,21 @@ function Feed() {
       return (data ?? []) as unknown as PostRow[];
     },
     getNextPageParam: (last, all) => (last.length < PAGE ? undefined : all.length * PAGE),
+  });
+
+  useEffect(() => {
+    currentUserId()
+      .then(setMe)
+      .catch(() => setMe(null));
+  }, []);
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const uid = await currentUserId();
+      const { error } = await supabase.from("posts").delete().eq("id", id).eq("user_id", uid);
+      if (error) throw error;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["feed"] }),
   });
 
   const sentinel = useRef<HTMLDivElement>(null);
@@ -57,7 +75,17 @@ function Feed() {
           <p className="text-sm text-muted-foreground">No posts yet. Be the first to post.</p>
         )}
         {posts.map((p) => (
-          <PostCard key={p.id} post={p} />
+          <PostCard
+            key={p.id}
+            post={p}
+            onDelete={
+              p.user_id === me
+                ? () => {
+                    if (confirm("Delete this post?")) remove.mutate(p.id);
+                  }
+                : undefined
+            }
+          />
         ))}
         <div ref={sentinel} className="h-8" />
         {isFetchingNextPage && <p className="text-center text-sm text-muted-foreground">Loading…</p>}
