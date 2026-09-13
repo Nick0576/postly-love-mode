@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { POST_SELECT, currentUserId, type PostRow, type Profile, isUserOnline } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 
-export const Route = createFileRoute("/_authenticated/u/$username")({
+export const Route = createFileRoute("/_authenticated/u/$username/")({
   head: () => ({
     meta: [
       { title: "Profile — Postly" },
