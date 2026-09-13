@@ -23,10 +23,12 @@ export function Avatar({
   url,
   name,
   size = 40,
+  className: _className,
 }: {
-  url: string | null;
-  name: string;
+  url?: string | null;
+  name?: string | null;
   size?: number;
+  className?: string;
 }) {
   const { data } = useQuery({
     queryKey: ["media", url],
