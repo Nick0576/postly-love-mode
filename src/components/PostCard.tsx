@@ -61,7 +61,7 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
             className={`inline-flex items-center gap-2 text-sm ${hasLiked ? "text-red-500" : "text-muted-foreground"} hover:text-red-500 transition-colors`}
           >
             <Heart className={`h-4 w-4 ${hasLiked ? "fill-current" : ""}`} />
-            {likeCount ?? 0}
+            {likeCount !== undefined && likeCount}
           </button>
         )}
         <Link

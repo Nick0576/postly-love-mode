@@ -27,8 +27,6 @@ export const Route = createFileRoute("/_authenticated/feed")({
 function Feed() {
   const qc = useQueryClient();
   const [me, setMe] = useState<string | null>(null);
-  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
-  const [likeCounts, setLikeCounts] = useState<Map<string, number>>(new Map());
 
   const { data: stories } = useQuery({
     queryKey: ["stories"],
@@ -77,23 +75,6 @@ function Feed() {
   const toggleLike = useMutation({
     mutationFn: async ({ postId, hasLiked }: { postId: string; hasLiked: boolean }) => {
       const uid = await currentUserId();
-      // Optimistic update
-      setLikedPosts(prev => {
-        const next = new Set(prev);
-        if (hasLiked) {
-          next.delete(postId);
-        } else {
-          next.add(postId);
-        }
-        return next;
-      });
-      setLikeCounts(prev => {
-        const next = new Map(prev);
-        const current = next.get(postId) ?? 0;
-        next.set(postId, hasLiked ? current - 1 : current + 1);
-        return next;
-      });
-
       if (hasLiked) {
         const { error } = await supabase
           .from("likes")
@@ -123,46 +104,6 @@ function Feed() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const posts = data?.pages.flat() ?? [];
-
-  // Fetch like counts for all posts
-  useEffect(() => {
-    if (posts.length === 0 || !me) return;
-    
-    const fetchLikeData = async () => {
-      const postIds = posts.map(p => p.id);
-      const { data: likes } = await supabase
-        .from("likes")
-        .select("post_id")
-        .eq("user_id", me)
-        .in("post_id", postIds);
-      
-      const { data: counts } = await supabase
-        .from("likes")
-        .select("post_id", { count: "exact", head: true })
-        .in("post_id", postIds);
-      
-      if (likes) {
-        setLikedPosts(new Set(likes.map(l => l.post_id)));
-      }
-      
-      if (counts) {
-        // Count likes per post
-        const countMap = new Map<string, number>();
-        postIds.forEach(id => countMap.set(id, 0));
-        // This is a simplified approach - in production you'd want a more efficient query
-        for (const postId of postIds) {
-          const { count } = await supabase
-            .from("likes")
-            .select("*", { count: "exact", head: true })
-            .eq("post_id", postId);
-          countMap.set(postId, count ?? 0);
-        }
-        setLikeCounts(countMap);
-      }
-    };
-    
-    fetchLikeData();
-  }, [posts, me]);
 
   return (
     <AppShell title="Postly">
@@ -225,9 +166,7 @@ function Feed() {
                   }
                 : undefined
             }
-            hasLiked={likedPosts.has(p.id)}
-            likeCount={likeCounts.get(p.id) ?? 0}
-            onToggleLike={() => toggleLike.mutate({ postId: p.id, hasLiked: likedPosts.has(p.id) })}
+            onToggleLike={() => toggleLike.mutate({ postId: p.id, hasLiked: false })}
           />
         ))}
         <div ref={sentinel} className="h-8" />
