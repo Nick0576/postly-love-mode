@@ -37,7 +37,7 @@ function ProfilePage() {
       const me = await currentUserId();
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online,profile_view_history_enabled")
+        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online,profile_view_history_enabled")
         .eq("username", username)
         .maybeSingle();
       if (!profile) return null;
@@ -125,6 +125,11 @@ function ProfilePage() {
       {data && (
         <>
           <div className="rounded-2xl border p-4 shadow-soft">
+            {data.profile.banner_url && (
+              <div className="relative -mx-4 -mt-4 mb-4 h-32 overflow-hidden rounded-t-2xl">
+                <Banner url={data.profile.banner_url} />
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Avatar url={data.profile.avatar_url} name={data.profile.display_name} size={56} />
