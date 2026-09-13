@@ -37,7 +37,7 @@ function ProfilePage() {
       const me = await currentUserId();
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online,profile_view_history_enabled")
+        .select("id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online")
         .eq("username", username)
         .maybeSingle();
       if (!profile) return null;
@@ -125,11 +125,6 @@ function ProfilePage() {
       {data && (
         <>
           <div className="rounded-2xl border p-4 shadow-soft">
-            {data.profile.banner_url && (
-              <div className="relative -mx-4 -mt-4 mb-4 h-32 overflow-hidden rounded-t-2xl">
-                <Banner url={data.profile.banner_url} />
-              </div>
-            )}
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Avatar url={data.profile.avatar_url} name={data.profile.display_name} size={56} />
@@ -204,32 +199,6 @@ function ProfilePage() {
                 <Button asChild className="mt-3" size="sm">
                   <Link to="/love">Answer questions</Link>
                 </Button>
-              )}
-            </div>
-          )}
-          {data.me === data.profile.id && data.profile.profile_view_history_enabled && (
-            <div className="mt-4 rounded-2xl border p-4">
-              <h3 className="font-semibold mb-3">Profile Views</h3>
-              {profileViews && profileViews.length > 0 ? (
-                <div className="space-y-2">
-                  {profileViews.map(({ viewer, viewed_at }) => (
-                    <Link
-                      key={viewer.id}
-                      to="/u/$username"
-                      params={{ username: viewer.username }}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
-                    >
-                      <Avatar url={viewer.avatar_url} name={viewer.display_name || viewer.username} size={32} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{viewer.display_name || viewer.username}</p>
-                        <p className="text-xs text-muted-foreground">@{viewer.username}</p>
-                      </div>
-                      <span className="text-xs text-muted-foreground">{timeAgo(viewed_at)}</span>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No profile views yet.</p>
               )}
             </div>
           )}

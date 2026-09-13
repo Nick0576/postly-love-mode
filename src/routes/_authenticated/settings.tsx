@@ -45,7 +45,7 @@ function SettingsPage() {
       const uid = await currentUserId();
       const { data } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,profile_view_history_enabled")
+        .select("id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled")
         .eq("id", uid)
         .maybeSingle();
       const p = data as Profile | null;
@@ -79,9 +79,7 @@ function SettingsPage() {
           bio, 
           chat_bubble_text: chatBubbleText,
           chat_bubble_enabled: chatBubbleEnabled,
-          profile_view_history_enabled: profileViewHistoryEnabled,
-          ...(avatar_url && !isBanner ? { avatar_url } : {}),
-          ...(avatar_url && isBanner ? { banner_url: avatar_url } : {})
+          ...(avatar_url && !isBanner ? { avatar_url } : {})
         })
         .eq("id", me.id);
       
@@ -131,18 +129,6 @@ function SettingsPage() {
               }}
             />
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="banner">Banner image</Label>
-            <Input
-              id="banner"
-              type="file"
-              accept="image/*"
-              onChange={async (e) => {
-                const f = e.target.files?.[0];
-                if (f) await save(await uploadMedia(f), true);
-              }}
-            />
-          </div>
           <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
           {me && (
             <Button asChild variant="outline" className="w-full">
@@ -176,24 +162,6 @@ function SettingsPage() {
             />
             <p className="text-xs text-muted-foreground">Max 50 characters</p>
           </div>
-          <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
-        </section>
-
-        <section className="space-y-3 rounded-2xl border p-4">
-          <h2 className="font-semibold">Privacy</h2>
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="profileViewHistoryEnabled"
-              checked={profileViewHistoryEnabled}
-              onChange={(e) => setProfileViewHistoryEnabled(e.target.checked)}
-              className="h-4 w-4"
-            />
-            <Label htmlFor="profileViewHistoryEnabled">Profile View History</Label>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            When ON, your profile visits are recorded and you can see who viewed your profile. When OFF, your visits are not recorded and you cannot see who viewed your profile.
-          </p>
           <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
         </section>
 
