@@ -7,6 +7,7 @@ import { PostCard } from "@/components/PostCard";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { POST_SELECT, currentUserId, timeAgo, type PostRow, type Profile } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
@@ -43,6 +44,7 @@ function PostPage() {
   const [editPostContent, setEditPostContent] = useState("");
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [editCommentContent, setEditCommentContent] = useState("");
+  const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     applyTheme(getTheme());
@@ -85,6 +87,26 @@ function PostPage() {
       return (data ?? []) as unknown as CommentRow[];
     },
   });
+
+  // Fetch comment likes
+  useEffect(() => {
+    if (!me || !comments) return;
+    
+    const fetchCommentLikes = async () => {
+      const commentIds = comments.map(c => c.id);
+      const { data } = await supabase
+        .from("likes")
+        .select("comment_id")
+        .eq("user_id", me)
+        .in("comment_id", commentIds);
+      
+      if (data) {
+        setLikedComments(new Set(data.map(l => l.comment_id)));
+      }
+    };
+    
+    fetchCommentLikes();
+  }, [comments, me]);
 
   const add = useMutation({
     mutationFn: async () => {
@@ -136,6 +158,28 @@ function PostPage() {
       toast.success("Comment updated");
       setEditingComment(null);
       setEditCommentContent("");
+      void qc.invalidateQueries({ queryKey: ["comments", postId] });
+    },
+  });
+
+  const toggleCommentLike = useMutation({
+    mutationFn: async ({ commentId, hasLiked }: { commentId: string; hasLiked: boolean }) => {
+      const uid = await currentUserId();
+      if (hasLiked) {
+        const { error } = await supabase
+          .from("likes")
+          .delete()
+          .eq("comment_id", commentId)
+          .eq("user_id", uid);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("likes")
+          .insert({ comment_id: commentId, user_id: uid });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["comments", postId] });
     },
   });
@@ -264,9 +308,18 @@ function PostPage() {
       ) : (
         <p className="mt-2 whitespace-pre-wrap break-words text-sm">{c.content}</p>
       )}
-      <button className="mt-2 text-xs text-primary" onClick={() => setReplyTo(c.id)}>
-        Reply
-      </button>
+      <div className="mt-2 flex items-center gap-3">
+        <button
+          onClick={() => toggleCommentLike.mutate({ commentId: c.id, hasLiked: likedComments.has(c.id) })}
+          className={`inline-flex items-center gap-1 text-xs ${likedComments.has(c.id) ? "text-red-500" : "text-muted-foreground"} hover:text-red-500 transition-colors`}
+        >
+          <Heart className={`h-3 w-3 ${likedComments.has(c.id) ? "fill-current" : ""}`} />
+          Like
+        </button>
+        <button className="text-xs text-primary" onClick={() => setReplyTo(c.id)}>
+          Reply
+        </button>
+      </div>
       {replies(c.id).map((r) => item(r, depth + 1))}
     </div>
   );
