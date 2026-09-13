@@ -156,6 +156,32 @@ function ProfilePage() {
     enabled: !!data && !!data.profile && data.me === data.profile.id && data.profile.profile_view_history_enabled,
   });
 
+  const postIds = data?.posts.map(p => p.id) ?? [];
+
+  const { data: likeData } = useQuery({
+    queryKey: ["likes-batch", postIds, data?.me],
+    queryFn: async () => {
+      if (postIds.length === 0 || !data?.me) return { liked: new Set<string>(), counts: new Map<string, number>() };
+      
+      const [likedResult, countsResult] = await Promise.all([
+        supabase.from("likes").select("post_id").eq("user_id", data.me).in("post_id", postIds),
+        Promise.all(postIds.map(async (postId) => {
+          const { count } = await supabase
+            .from("likes")
+            .select("*", { count: "exact", head: true })
+            .eq("post_id", postId);
+          return { postId, count: count ?? 0 };
+        }))
+      ]);
+
+      const liked = new Set(likedResult.data?.map(l => l.post_id) ?? []);
+      const counts = new Map(countsResult.map(r => [r.postId, r.count]));
+      
+      return { liked, counts };
+    },
+    enabled: postIds.length > 0 && !!data?.me,
+  });
+
   useEffect(() => {
     if (data && data.profile && data.me === data.profile.id) {
       void cleanupOldProfileViews();
@@ -295,7 +321,9 @@ function ProfilePage() {
                       }
                     : undefined
                 }
-                onToggleLike={() => toggleLike.mutate({ postId: p.id, hasLiked: false })}
+                hasLiked={likeData?.liked.has(p.id)}
+                likeCount={likeData?.counts.get(p.id)}
+                onToggleLike={() => toggleLike.mutate({ postId: p.id, hasLiked: likeData?.liked.has(p.id) ?? false })}
                 isPinned={p.is_pinned}
                 onTogglePin={
                   data.me === data.profile.id

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
@@ -26,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/feed")({
 
 function Feed() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [me, setMe] = useState<string | null>(null);
 
   const { data: stories } = useQuery({
@@ -92,6 +93,42 @@ function Feed() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["feed"] }),
   });
 
+  const togglePin = useMutation({
+    mutationFn: async ({ postId, isPinned }: { postId: string; isPinned: boolean }) => {
+      const uid = await currentUserId();
+      if (isPinned) {
+        const { error } = await supabase
+          .from("posts")
+          .update({ is_pinned: false })
+          .eq("id", postId)
+          .eq("user_id", uid);
+        if (error) throw error;
+      } else {
+        await supabase
+          .from("posts")
+          .update({ is_pinned: false })
+          .eq("user_id", uid)
+          .eq("is_pinned", true);
+        const { error } = await supabase
+          .from("posts")
+          .update({ is_pinned: true })
+          .eq("id", postId)
+          .eq("user_id", uid);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["feed"] }),
+  });
+
+  const editPost = useMutation({
+    mutationFn: async ({ postId, content }: { postId: string; content: string }) => {
+      const uid = await currentUserId();
+      const { error } = await supabase.from("posts").update({ content }).eq("id", postId).eq("user_id", uid);
+      if (error) throw error;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["feed"] }),
+  });
+
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = sentinel.current;
@@ -104,6 +141,33 @@ function Feed() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const posts = data?.pages.flat() ?? [];
+
+  const postIds = posts.map(p => p.id);
+
+  const { data: likeData } = useQuery({
+    queryKey: ["likes-batch", postIds, me],
+    queryFn: async () => {
+      if (postIds.length === 0 || !me) return { liked: new Set<string>(), counts: new Map<string, number>() };
+      
+      const [likedResult, countsResult] = await Promise.all([
+        supabase.from("likes").select("post_id").eq("user_id", me).in("post_id", postIds),
+        // Fetch counts for each post
+        Promise.all(postIds.map(async (postId) => {
+          const { count } = await supabase
+            .from("likes")
+            .select("*", { count: "exact", head: true })
+            .eq("post_id", postId);
+          return { postId, count: count ?? 0 };
+        }))
+      ]);
+
+      const liked = new Set(likedResult.data?.map(l => l.post_id) ?? []);
+      const counts = new Map(countsResult.map(r => [r.postId, r.count]));
+      
+      return { liked, counts };
+    },
+    enabled: postIds.length > 0 && !!me,
+  });
 
   return (
     <AppShell title="Postly">
@@ -166,7 +230,20 @@ function Feed() {
                   }
                 : undefined
             }
-            onToggleLike={() => toggleLike.mutate({ postId: p.id, hasLiked: false })}
+            hasLiked={likeData?.liked.has(p.id)}
+            likeCount={likeData?.counts.get(p.id)}
+            onToggleLike={() => toggleLike.mutate({ postId: p.id, hasLiked: likeData?.liked.has(p.id) ?? false })}
+            isPinned={p.is_pinned}
+            onTogglePin={
+              p.user_id === me
+                ? () => togglePin.mutate({ postId: p.id, isPinned: p.is_pinned })
+                : undefined
+            }
+            onEdit={
+              p.user_id === me
+                ? () => navigate({ to: "/post/$postId", params: { postId: p.id } })
+                : undefined
+            }
           />
         ))}
         <div ref={sentinel} className="h-8" />
