@@ -40,7 +40,7 @@ function SettingsPage() {
     applyTheme(theme);
   }, []);
 
-  const { data: me } = useQuery({
+  const { data: me, error: queryError, isError } = useQuery({
     queryKey: ["me"],
     queryFn: async () => {
       try {
@@ -114,16 +114,16 @@ function SettingsPage() {
 
   return (
     <AppShell title="Settings">
-      {error && (
+      {(error || queryError) && (
         <div className="mb-4 rounded-lg border border-red-500 bg-red-50 p-4 dark:bg-red-950/20">
           <h3 className="font-semibold text-red-900 dark:text-red-100">Error loading settings</h3>
-          <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</p>
+          <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error || (queryError instanceof Error ? queryError.message : String(queryError))}</p>
           <Button
             variant="outline"
             size="sm"
             className="mt-2"
             onClick={() => {
-              navigator.clipboard.writeText(error);
+              navigator.clipboard.writeText(error || (queryError instanceof Error ? queryError.message : String(queryError)));
               alert("Error copied to clipboard");
             }}
           >
