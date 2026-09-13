@@ -1,4 +1,4 @@
-export function renderErrorPage(): string {
+export function renderErrorPage(error?: string): string {
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -10,19 +10,23 @@ export function renderErrorPage(): string {
       .card { max-width: 28rem; width: 100%; text-align: center; padding: 2rem; }
       h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
       p { color: #4b5563; margin: 0 0 1.5rem; }
+      .error-message { background: #fee2e2; color: #991b1b; padding: 0.75rem; border-radius: 0.375rem; font-size: 0.875rem; margin-bottom: 1.5rem; word-break: break-word; text-align: left; }
       .actions { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
       a, button { padding: 0.5rem 1rem; border-radius: 0.375rem; font: inherit; cursor: pointer; text-decoration: none; border: 1px solid transparent; }
       .primary { background: #111; color: #fff; }
       .secondary { background: #fff; color: #111; border-color: #d1d5db; }
+      .copy-btn { background: #fff; color: #111; border-color: #d1d5db; }
     </style>
   </head>
   <body>
     <div class="card">
       <h1>This page didn't load</h1>
       <p>Something went wrong on our end. You can try refreshing or head back home.</p>
+      ${error ? `<div class="error-message"><strong>Error:</strong> ${error}</div>` : ''}
       <div class="actions">
         <button class="primary" onclick="location.reload()">Try again</button>
         <a class="secondary" href="/">Go home</a>
+        ${error ? `<button class="copy-btn" onclick="navigator.clipboard.writeText('${error.replace(/'/g, "\\'")}'); alert('Error copied to clipboard');">Copy Error</button>` : ''}
       </div>
     </div>
   </body>
