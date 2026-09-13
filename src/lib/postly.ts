@@ -13,6 +13,17 @@ export type Profile = {
   is_online?: boolean;
 };
 
+export type Story = {
+  id: string;
+  user_id: string;
+  content: string | null;
+  media_url: string | null;
+  media_type: string;
+  created_at: string;
+  expires_at: string;
+  profiles: Profile | null;
+};
+
 export type PostRow = {
   id: string;
   user_id: string;
@@ -90,6 +101,28 @@ export function isUserOnline(profile: Profile): boolean {
   const lastSeen = new Date(profile.last_seen).getTime();
   const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
   return lastSeen > fiveMinutesAgo;
+}
+
+// Story utilities
+export async function createStory(content: string, mediaUrl: string | null, mediaType: string): Promise<void> {
+  const uid = await currentUserId();
+  const { error } = await supabase.from("stories").insert({
+    user_id: uid,
+    content: mediaType === "text" ? content : null,
+    media_url: mediaUrl,
+    media_type: mediaType,
+  });
+  if (error) throw error;
+}
+
+export async function deleteStory(storyId: string): Promise<void> {
+  const uid = await currentUserId();
+  const { error } = await supabase.from("stories").delete().eq("id", storyId).eq("user_id", uid);
+  if (error) throw error;
+}
+
+export function isStoryExpired(story: Story): boolean {
+  return new Date(story.expires_at) < new Date();
 }
 
 export const LOVE_QUESTIONS = [
