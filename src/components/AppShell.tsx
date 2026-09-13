@@ -20,16 +20,18 @@ export function AppShell({ title, children, headerAction }: { title: string; chi
   const isPulling = useRef(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.scrollY === 0) {
-      startY.current = e.touches[0].clientY;
+    const t = e.touches[0];
+    if (t && window.scrollY === 0) {
+      startY.current = t.clientY;
       isPulling.current = true;
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isPulling.current) return;
-    const currentY = e.touches[0].clientY;
-    const distance = currentY - startY.current;
+    const t = e.touches[0];
+    if (!t) return;
+    const distance = t.clientY - startY.current;
     if (distance > 0 && window.scrollY === 0) {
       setPullDistance(Math.min(distance, 120));
     }
