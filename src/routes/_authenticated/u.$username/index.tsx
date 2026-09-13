@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
@@ -26,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/u/$username/")({
 
 function ProfilePage() {
   const { username } = Route.useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [showBubbleOverlay, setShowBubbleOverlay] = useState(false);
 
@@ -328,6 +329,11 @@ function ProfilePage() {
                 onTogglePin={
                   data.me === data.profile.id
                     ? () => togglePin.mutate({ postId: p.id, isPinned: p.is_pinned })
+                    : undefined
+                }
+                onEdit={
+                  data.me === data.profile.id
+                    ? () => navigate({ to: "/post/$postId", params: { postId: p.id } })
                     : undefined
                 }
               />
