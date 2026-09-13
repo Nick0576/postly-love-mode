@@ -111,6 +111,9 @@ function ProfilePage() {
                 {isUserOnline(data.profile) && (
                   <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-background" />
                 )}
+                {!isUserOnline(data.profile) && (
+                  <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-gray-400 border-2 border-background" />
+                )}
                 {data.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
                   <div 
                     className="absolute -top-10 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-2xl shadow-md whitespace-nowrap cursor-pointer"
@@ -127,7 +130,7 @@ function ProfilePage() {
                 </h2>
                 <p className="text-xs text-muted-foreground">
                   @{data.profile.username} · {data.followers} followers
-                  {isUserOnline(data.profile) && " · Online"}
+                  {isUserOnline(data.profile) ? " · Online" : " · Offline"}
                 </p>
               </div>
             </div>

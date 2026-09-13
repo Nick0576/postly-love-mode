@@ -134,6 +134,9 @@ export function AccountSwitcher() {
             {activeAccount && (
               <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-background" />
             )}
+            {!activeAccount && (
+              <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-gray-400 border-2 border-background" />
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">

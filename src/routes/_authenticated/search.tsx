@@ -163,6 +163,9 @@ function UserCard({ user }: { user: Profile }) {
           {isUserOnline(user) && (
             <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-background" />
           )}
+          {!isUserOnline(user) && (
+            <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-gray-400 border-2 border-background" />
+          )}
         </div>
         <div className="min-w-0">
           <p className="truncate font-semibold">{user.display_name || user.username}</p>
