@@ -72,6 +72,26 @@ function Feed() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["feed"] }),
   });
 
+  const toggleLike = useMutation({
+    mutationFn: async ({ postId, hasLiked }: { postId: string; hasLiked: boolean }) => {
+      const uid = await currentUserId();
+      if (hasLiked) {
+        const { error } = await supabase
+          .from("likes")
+          .delete()
+          .eq("post_id", postId)
+          .eq("user_id", uid);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("likes")
+          .insert({ post_id: postId, user_id: uid });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["feed"] }),
+  });
+
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = sentinel.current;
@@ -146,6 +166,7 @@ function Feed() {
                   }
                 : undefined
             }
+            onToggleLike={() => toggleLike.mutate({ postId: p.id, hasLiked: false })}
           />
         ))}
         <div ref={sentinel} className="h-8" />
