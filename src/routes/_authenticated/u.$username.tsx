@@ -132,11 +132,11 @@ function ProfilePage() {
                 </h2>
                 <p className="text-xs text-muted-foreground">
                   @{data.profile.username} ·{" "}
-                  <Link to="/u/$username/followers" params={{ username: data.profile.username }} className="hover:underline">
+                  <Link to="/u/$username/followers" params={{ username: data.profile.username }} className="text-primary hover:underline font-medium">
                     {data.followers} followers
                   </Link>{" "}
                   ·{" "}
-                  <Link to="/u/$username/following" params={{ username: data.profile.username }} className="hover:underline">
+                  <Link to="/u/$username/following" params={{ username: data.profile.username }} className="text-primary hover:underline font-medium">
                     {data.followingCount} following
                   </Link>
                   {isUserOnline(data.profile) ? " · Online" : " · Offline"}
