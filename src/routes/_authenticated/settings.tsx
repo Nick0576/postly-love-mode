@@ -45,7 +45,7 @@ function SettingsPage() {
       const uid = await currentUserId();
       const { data } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,profile_view_history_enabled")
+        .select("id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled,profile_view_history_enabled")
         .eq("id", uid)
         .maybeSingle();
       const p = data as Profile | null;
@@ -80,8 +80,7 @@ function SettingsPage() {
           chat_bubble_text: chatBubbleText,
           chat_bubble_enabled: chatBubbleEnabled,
           profile_view_history_enabled: profileViewHistoryEnabled,
-          ...(avatar_url && !isBanner ? { avatar_url } : {}),
-          ...(avatar_url && isBanner ? { banner_url: avatar_url } : {})
+          ...(avatar_url && !isBanner ? { avatar_url } : {})
         })
         .eq("id", me.id);
       
@@ -128,18 +127,6 @@ function SettingsPage() {
               onChange={async (e) => {
                 const f = e.target.files?.[0];
                 if (f) await save(await uploadMedia(f));
-              }}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="banner">Banner image</Label>
-            <Input
-              id="banner"
-              type="file"
-              accept="image/*"
-              onChange={async (e) => {
-                const f = e.target.files?.[0];
-                if (f) await save(await uploadMedia(f), true);
               }}
             />
           </div>
