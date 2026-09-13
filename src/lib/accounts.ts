@@ -6,6 +6,7 @@ const ACTIVE_ACCOUNT_KEY = "postly-active-account";
 export interface StoredAccount {
   id: string;
   email: string;
+  password: string;
   access_token: string;
   refresh_token: string;
   display_name: string;
@@ -55,6 +56,7 @@ export async function addAccount(email: string, password: string): Promise<Store
   const account: StoredAccount = {
     id: session.user.id,
     email: session.user.email || email,
+    password: password,
     access_token: session.access_token,
     refresh_token: session.refresh_token,
     display_name: profile?.display_name || "",
@@ -87,28 +89,28 @@ export async function switchAccount(accountId: string): Promise<void> {
   // Sign out current session
   await supabase.auth.signOut();
 
-  // Set session with stored tokens
-  const { error } = await supabase.auth.setSession({
-    access_token: account.access_token,
-    refresh_token: account.refresh_token,
+  // Sign in with stored credentials to get fresh tokens
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: account.email,
+    password: account.password,
   });
 
   if (error) {
-    console.error("Session set error:", error);
+    console.error("Sign in error:", error);
     throw new Error(`Failed to switch account: ${error.message}. Please remove and re-add this account.`);
   }
 
-  // Update stored tokens with fresh session
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    account.access_token = session.access_token;
-    account.refresh_token = session.refresh_token;
-    
-    const updatedAccounts = accounts.map(a => 
-      a.id === accountId ? account : a
-    );
-    saveStoredAccounts(updatedAccounts);
-  }
+  const session = data.session;
+  if (!session) throw new Error("No session returned");
+
+  // Update stored account with fresh tokens
+  account.access_token = session.access_token;
+  account.refresh_token = session.refresh_token;
+  
+  const updatedAccounts = accounts.map(a => 
+    a.id === accountId ? account : a
+  );
+  saveStoredAccounts(updatedAccounts);
 
   setActiveAccountId(accountId);
 }
