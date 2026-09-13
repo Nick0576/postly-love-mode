@@ -31,6 +31,7 @@ function SettingsPage() {
   const [chatBubbleEnabled, setChatBubbleEnabled] = useState(false);
   const [profileViewHistoryEnabled, setProfileViewHistoryEnabled] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const taps = useRef(0);
 
   useEffect(() => {
@@ -42,26 +43,31 @@ function SettingsPage() {
   const { data: me } = useQuery({
     queryKey: ["me"],
     queryFn: async () => {
-      const uid = await currentUserId();
-      const { data } = await supabase
-        .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled")
-        .eq("id", uid)
-        .maybeSingle();
-      const p = data as Profile | null;
-      setName(p?.display_name ?? "");
-      setBio(p?.bio ?? "");
-      
-      // Try to load from database, fall back to localStorage
-      const dbBubbleText = p?.chat_bubble_text;
-      const dbBubbleEnabled = p?.chat_bubble_enabled;
-      const localBubble = getChatBubbleFromStorage();
-      
-      setChatBubbleText(dbBubbleText ?? localBubble?.text ?? "");
-      setChatBubbleEnabled(dbBubbleEnabled ?? localBubble?.enabled ?? false);
-      setProfileViewHistoryEnabled(p?.profile_view_history_enabled ?? true);
-      
-      return p;
+      try {
+        const uid = await currentUserId();
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,profile_view_history_enabled")
+          .eq("id", uid)
+          .maybeSingle();
+        if (error) throw error;
+        const p = data as Profile | null;
+        setName(p?.display_name ?? "");
+        setBio(p?.bio ?? "");
+        
+        // Try to load from database, fall back to localStorage
+        const dbBubbleText = p?.chat_bubble_text;
+        const dbBubbleEnabled = p?.chat_bubble_enabled;
+        const localBubble = getChatBubbleFromStorage();
+        
+        setChatBubbleText(dbBubbleText ?? localBubble?.text ?? "");
+        setChatBubbleEnabled(dbBubbleEnabled ?? localBubble?.enabled ?? false);
+        setProfileViewHistoryEnabled(p?.profile_view_history_enabled ?? true);
+        return p;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+        throw e;
+      }
     },
   });
 
@@ -79,7 +85,9 @@ function SettingsPage() {
           bio, 
           chat_bubble_text: chatBubbleText,
           chat_bubble_enabled: chatBubbleEnabled,
-          ...(avatar_url && !isBanner ? { avatar_url } : {})
+          profile_view_history_enabled: profileViewHistoryEnabled,
+          ...(avatar_url && !isBanner ? { avatar_url } : {}),
+          ...(avatar_url && isBanner ? { banner_url: avatar_url } : {})
         })
         .eq("id", me.id);
       
@@ -106,6 +114,23 @@ function SettingsPage() {
 
   return (
     <AppShell title="Settings">
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-500 bg-red-50 p-4 dark:bg-red-950/20">
+          <h3 className="font-semibold text-red-900 dark:text-red-100">Error loading settings</h3>
+          <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={() => {
+              navigator.clipboard.writeText(error);
+              alert("Error copied to clipboard");
+            }}
+          >
+            Copy Error
+          </Button>
+        </div>
+      )}
       <div className="space-y-6">
         <section className="space-y-3 rounded-2xl border p-4">
           <h2 className="font-semibold">Profile</h2>
@@ -126,6 +151,18 @@ function SettingsPage() {
               onChange={async (e) => {
                 const f = e.target.files?.[0];
                 if (f) await save(await uploadMedia(f));
+              }}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="banner">Banner image</Label>
+            <Input
+              id="banner"
+              type="file"
+              accept="image/*"
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (f) await save(await uploadMedia(f), true);
               }}
             />
           </div>
@@ -162,6 +199,24 @@ function SettingsPage() {
             />
             <p className="text-xs text-muted-foreground">Max 50 characters</p>
           </div>
+          <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
+        </section>
+
+        <section className="space-y-3 rounded-2xl border p-4">
+          <h2 className="font-semibold">Privacy</h2>
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="profileViewHistoryEnabled"
+              checked={profileViewHistoryEnabled}
+              onChange={(e) => setProfileViewHistoryEnabled(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="profileViewHistoryEnabled">Profile View History</Label>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            When ON, your profile visits are recorded and you can see who viewed your profile. When OFF, your visits are not recorded and you cannot see who viewed your profile.
+          </p>
           <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
         </section>
 
