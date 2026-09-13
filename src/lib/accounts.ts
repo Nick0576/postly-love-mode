@@ -87,34 +87,27 @@ export async function switchAccount(accountId: string): Promise<void> {
   // Sign out current session
   await supabase.auth.signOut();
 
-  // Try to set session with stored tokens
-  const { error: sessionError } = await supabase.auth.setSession({
+  // Set session with stored tokens
+  const { error } = await supabase.auth.setSession({
     access_token: account.access_token,
     refresh_token: account.refresh_token,
   });
 
-  if (sessionError) {
-    // If session setting fails, try to refresh the token
-    const { error: refreshError } = await supabase.auth.refreshSession({
-      refresh_token: account.refresh_token,
-    });
+  if (error) {
+    console.error("Session set error:", error);
+    throw new Error(`Failed to switch account: ${error.message}. Please remove and re-add this account.`);
+  }
 
-    if (refreshError) {
-      throw new Error("Account session expired. Please remove and re-add this account.");
-    }
-
-    // Get the new session and update stored account
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      account.access_token = session.access_token;
-      account.refresh_token = session.refresh_token;
-      
-      // Update the account in storage
-      const updatedAccounts = accounts.map(a => 
-        a.id === accountId ? account : a
-      );
-      saveStoredAccounts(updatedAccounts);
-    }
+  // Update stored tokens with fresh session
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    account.access_token = session.access_token;
+    account.refresh_token = session.refresh_token;
+    
+    const updatedAccounts = accounts.map(a => 
+      a.id === accountId ? account : a
+    );
+    saveStoredAccounts(updatedAccounts);
   }
 
   setActiveAccountId(accountId);
