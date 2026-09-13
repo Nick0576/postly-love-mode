@@ -42,10 +42,11 @@ function ProfilePage() {
         .maybeSingle();
       if (!profile) return null;
       const p = profile as Profile;
-      const [posts, following, followers, followsBack, loveAnswers] = await Promise.all([
+      const [posts, following, followers, followingCount, followsBack, loveAnswers] = await Promise.all([
         supabase.from("posts").select(POST_SELECT).eq("user_id", p.id).order("created_at", { ascending: false }).limit(20),
         supabase.from("follows").select("follower_id").eq("follower_id", me).eq("following_id", p.id).maybeSingle(),
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", p.id),
+        supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", p.id),
         supabase.from("follows").select("follower_id").eq("follower_id", p.id).eq("following_id", me).maybeSingle(),
         supabase.from("love_answers").select("user_id,answers").in("user_id", [me, p.id]),
       ]);
@@ -65,6 +66,7 @@ function ProfilePage() {
         posts: (posts.data ?? []) as unknown as PostRow[],
         isFollowing: !!following.data,
         followers: followers.count ?? 0,
+        followingCount: followingCount.count ?? 0,
         isMutual,
         loveMatch,
       };
@@ -129,7 +131,14 @@ function ProfilePage() {
                   {data.profile.display_name || data.profile.username}
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  @{data.profile.username} · {data.followers} followers
+                  @{data.profile.username} ·{" "}
+                  <Link to="/u/$username/followers" params={{ username: data.profile.username }} className="hover:underline">
+                    {data.followers} followers
+                  </Link>{" "}
+                  ·{" "}
+                  <Link to="/u/$username/following" params={{ username: data.profile.username }} className="hover:underline">
+                    {data.followingCount} following
+                  </Link>
                   {isUserOnline(data.profile) ? " · Online" : " · Offline"}
                 </p>
               </div>

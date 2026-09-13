@@ -202,10 +202,13 @@ function SettingsPage() {
             onClick={async () => {
               if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
                 const uid = await currentUserId();
-                await supabase.from("profiles").delete().eq("id", uid);
+                // Delete all user data
+                await supabase.from("stories").delete().eq("user_id", uid);
                 await supabase.from("posts").delete().eq("user_id", uid);
+                await supabase.from("messages").delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`);
                 await supabase.from("follows").delete().or(`follower_id.eq.${uid},following_id.eq.${uid}`);
                 await supabase.from("love_answers").delete().eq("user_id", uid);
+                await supabase.from("profiles").delete().eq("id", uid);
                 await supabase.auth.signOut();
                 void navigate({ to: "/auth" });
               }
