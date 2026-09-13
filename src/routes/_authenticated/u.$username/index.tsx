@@ -95,19 +95,19 @@ function ProfilePage() {
   });
 
   useEffect(() => {
-    if (data && data.me !== data.profile.id) {
+    if (data && data.profile && data.me !== data.profile.id) {
       void recordProfileView(data.profile.id);
     }
   }, [data]);
 
   const { data: profileViews } = useQuery({
-    queryKey: ["profile-views", data?.profile.id],
-    queryFn: () => data ? getProfileViews(data.profile.id) : Promise.resolve([]),
-    enabled: !!data && data.me === data.profile.id && data.profile.profile_view_history_enabled,
+    queryKey: ["profile-views", data?.profile?.id],
+    queryFn: () => data?.profile ? getProfileViews(data.profile.id) : Promise.resolve([]),
+    enabled: !!data && !!data.profile && data.me === data.profile.id && data.profile.profile_view_history_enabled,
   });
 
   useEffect(() => {
-    if (data && data.me === data.profile.id) {
+    if (data && data.profile && data.me === data.profile.id) {
       void cleanupOldProfileViews();
     }
   }, [data]);
