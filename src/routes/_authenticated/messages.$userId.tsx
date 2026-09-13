@@ -4,7 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mic, Video, Send, X, Edit2 } from "lucide-react";
+import { Mic, Video, Send, X, Edit2, ImagePlus, Smile } from "lucide-react";
+
+const STICKERS = ["😀","😂","🥰","😍","😎","🤔","😭","😡","👍","👎","🙏","👏","🔥","💯","🎉","✨","❤️","💔","💕","🌹","🐱","🐶","🍕","☕","🌙","⭐","🎵","⚽","🎮","🚀","🌈","💎"];
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, uploadMedia, signedUrl, type Profile, editMessage } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
