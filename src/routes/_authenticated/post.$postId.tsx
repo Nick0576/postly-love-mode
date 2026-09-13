@@ -39,6 +39,10 @@ function PostPage() {
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [me, setMe] = useState<string | null>(null);
+  const [editingPost, setEditingPost] = useState(false);
+  const [editPostContent, setEditPostContent] = useState("");
+  const [editingComment, setEditingComment] = useState<string | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
 
   useEffect(() => {
     applyTheme(getTheme());
@@ -109,6 +113,33 @@ function PostPage() {
     },
   });
 
+  const editPost = useMutation({
+    mutationFn: async (content: string) => {
+      const uid = await currentUserId();
+      const { error } = await supabase.from("posts").update({ content }).eq("id", postId).eq("user_id", uid);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Post updated");
+      setEditingPost(false);
+      void qc.invalidateQueries({ queryKey: ["post", postId] });
+    },
+  });
+
+  const editComment = useMutation({
+    mutationFn: async ({ commentId, content }: { commentId: string; content: string }) => {
+      const uid = await currentUserId();
+      const { error } = await supabase.from("comments").update({ content }).eq("id", commentId).eq("user_id", uid);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Comment updated");
+      setEditingComment(null);
+      setEditCommentContent("");
+      void qc.invalidateQueries({ queryKey: ["comments", postId] });
+    },
+  });
+
   const { data: hasLiked } = useQuery({
     queryKey: ["has-liked", postId, me],
     queryFn: async () => {
@@ -172,17 +203,61 @@ function PostPage() {
           @{c.profiles?.username} · {timeAgo(c.created_at)}
         </p>
         {c.user_id === me && (
-          <button
-            onClick={() => {
-              if (confirm("Delete this comment?")) deleteComment.mutate(c.id);
-            }}
-            className="ml-auto text-xs text-destructive hover:underline"
-          >
-            Delete
-          </button>
+          <div className="ml-auto flex gap-2">
+            {editingComment === c.id ? (
+              <>
+                <button
+                  onClick={() => {
+                    setEditingComment(null);
+                    setEditCommentContent("");
+                  }}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => editComment.mutate({ commentId: c.id, content: editCommentContent.trim() })}
+                  disabled={!editCommentContent.trim() || editComment.isPending}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Save
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setEditingComment(c.id);
+                    setEditCommentContent(c.content);
+                  }}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Delete this comment?")) deleteComment.mutate(c.id);
+                  }}
+                  className="text-xs text-destructive hover:underline"
+                >
+                  Delete
+                </button>
+              </>
+            )}
+          </div>
         )}
       </div>
-      <p className="mt-2 whitespace-pre-wrap break-words text-sm">{c.content}</p>
+      {editingComment === c.id ? (
+        <Textarea
+          value={editCommentContent}
+          onChange={(e) => setEditCommentContent(e.target.value)}
+          className="mt-2"
+          placeholder="Edit comment"
+          maxLength={500}
+        />
+      ) : (
+        <p className="mt-2 whitespace-pre-wrap break-words text-sm">{c.content}</p>
+      )}
       <button className="mt-2 text-xs text-primary" onClick={() => setReplyTo(c.id)}>
         Reply
       </button>
@@ -193,19 +268,58 @@ function PostPage() {
   return (
     <AppShell title="Post">
       {post && (
-        <PostCard
-          post={post}
-          onDelete={
-            post.user_id === me
-              ? () => {
-                  if (confirm("Delete this post?")) remove.mutate();
-                }
-              : undefined
-          }
-          hasLiked={hasLiked}
-          likeCount={likeCount}
-          onToggleLike={() => toggleLike.mutate()}
-        />
+        <>
+          {editingPost ? (
+            <div className="rounded-2xl border bg-card p-4 shadow-soft">
+              <Textarea
+                value={editPostContent}
+                onChange={(e) => setEditPostContent(e.target.value)}
+                placeholder="Edit post"
+                maxLength={500}
+                className="mb-2"
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => editPost.mutate(editPostContent.trim())}
+                  disabled={!editPostContent.trim() || editPost.isPending}
+                >
+                  Save
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditingPost(false);
+                    setEditPostContent("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <PostCard
+              post={post}
+              onDelete={
+                post.user_id === me
+                  ? () => {
+                      if (confirm("Delete this post?")) remove.mutate();
+                    }
+                  : undefined
+              }
+              hasLiked={hasLiked}
+              likeCount={likeCount}
+              onToggleLike={() => toggleLike.mutate()}
+              onEdit={
+                post.user_id === me
+                  ? () => {
+                      setEditingPost(true);
+                      setEditPostContent(post.content);
+                    }
+                  : undefined
+              }
+            />
+          )}
+        </>
       )}
       <div className="mt-4">
         {replyTo && (

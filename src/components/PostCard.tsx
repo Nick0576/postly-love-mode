@@ -3,7 +3,7 @@ import { MessageCircle, Heart, Pin } from "lucide-react";
 import { Avatar, Media } from "@/components/Media";
 import { timeAgo, type PostRow } from "@/lib/postly";
 
-export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, isPinned, onTogglePin }: { 
+export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, isPinned, onTogglePin, onEdit }: { 
   post: PostRow; 
   onDelete?: (() => void) | undefined;
   hasLiked?: boolean;
@@ -11,6 +11,7 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
   onToggleLike?: () => void;
   isPinned?: boolean;
   onTogglePin?: () => void;
+  onEdit?: () => void;
 }) {
   const author = post.profiles;
   return (
@@ -37,6 +38,11 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
               title={isPinned ? "Unpin post" : "Pin post"}
             >
               <Pin className={`h-4 w-4 ${isPinned ? "fill-current" : ""}`} />
+            </button>
+          )}
+          {onEdit && (
+            <button onClick={onEdit} className="text-xs text-muted-foreground hover:underline">
+              Edit
             </button>
           )}
           {onDelete && (
