@@ -275,7 +275,7 @@ function GroupChat() {
               <Button onClick={() => setIsRenaming(false)} variant="outline" size="sm">Cancel</Button>
             </div>
           ) : (
-            <Button onClick={() => { setIsRenaming(true); setNewGroupName(data.group.name); }} variant="outline" size="sm" className="w-full">
+            <Button onClick={() => { setIsRenaming(true); setNewGroupName(data.group?.name ?? ""); }} variant="outline" size="sm" className="w-full">
               <Edit2 className="h-4 w-4 mr-2" /> Rename Group
             </Button>
           )}
