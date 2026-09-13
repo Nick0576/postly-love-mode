@@ -59,7 +59,7 @@ function GroupChat() {
         supabase.from("group_chats").select("*").eq("id", groupId).maybeSingle(),
         getGroupMembers(groupId),
       ]);
-      return { me, msgs: (msgs.data ?? []) as Msg[], group: group as GroupChat | null, members };
+      return { me, msgs: (msgs.data ?? []) as unknown as Msg[], group: (group.data ?? null) as GroupChat | null, members };
     },
   });
 
