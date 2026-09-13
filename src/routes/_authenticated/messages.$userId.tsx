@@ -95,6 +95,36 @@ function Chat() {
     void qc.invalidateQueries({ queryKey: ["chat", userId] });
   }
 
+  async function sendFile(file: File) {
+    if (!data) return;
+    setUploading(true);
+    try {
+      const media_url = await uploadMedia(file);
+      await supabase.from("messages").insert({
+        sender_id: data.me,
+        recipient_id: userId,
+        content: "",
+        media_url,
+        media_type: file.type.startsWith("video") ? "video" : "image",
+      });
+      void qc.invalidateQueries({ queryKey: ["chat", userId] });
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function sendSticker(sticker: string) {
+    if (!data) return;
+    setShowStickers(false);
+    await supabase.from("messages").insert({
+      sender_id: data.me,
+      recipient_id: userId,
+      content: sticker,
+      media_type: "sticker",
+    });
+    void qc.invalidateQueries({ queryKey: ["chat", userId] });
+  }
+
   function startRecording() {
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => {
