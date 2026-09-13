@@ -122,7 +122,7 @@ export async function updateAccountProfile(accountId: string): Promise<void> {
   if (index === -1) return;
 
   // Temporarily switch to this account to get profile
-  const account = accounts[index];
+  const account = accounts[index]!;
   const { error } = await supabase.auth.setSession({
     access_token: account.access_token,
     refresh_token: account.refresh_token,
@@ -137,7 +137,7 @@ export async function updateAccountProfile(accountId: string): Promise<void> {
 
     if (profile) {
       accounts[index] = {
-        ...accounts[index],
+        ...account,
         display_name: profile.display_name,
         username: profile.username,
         avatar_url: profile.avatar_url,
