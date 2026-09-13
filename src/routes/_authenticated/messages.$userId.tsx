@@ -236,6 +236,13 @@ function Chat() {
                 {m.media_type === "audio" && m.media_url && (
                   <VoiceMessage mediaUrl={m.media_url} />
                 )}
+                {m.media_type === "image" && m.media_url && (
+                  <ChatMedia mediaUrl={m.media_url} kind="image" />
+                )}
+                {m.media_type === "video" && m.media_url && (
+                  <ChatMedia mediaUrl={m.media_url} kind="video" />
+                )}
+                {m.media_type === "sticker" && <span className="text-4xl">{m.content}</span>}
                 {m.content && !m.media_type && m.content}
               </>
             )}
