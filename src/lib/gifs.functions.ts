@@ -29,7 +29,12 @@ export const searchGifs = createServerFn({ method: "GET" })
       .map((it) => ({
         id: String(it.id),
         title: it.title ?? "GIF",
-        url: it.file?.md?.gif?.url ?? it.file?.sm?.gif?.url ?? it.file?.md?.webp?.url ?? it.file?.hd?.gif?.url ?? "",
+        url:
+          it.file?.["md"]?.["gif"]?.url ??
+          it.file?.["sm"]?.["gif"]?.url ??
+          it.file?.["md"]?.["webp"]?.url ??
+          it.file?.["hd"]?.["gif"]?.url ??
+          "",
       }))
       .filter((g) => g.url);
   });
