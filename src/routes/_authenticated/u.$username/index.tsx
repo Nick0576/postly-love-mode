@@ -28,6 +28,8 @@ function ProfilePage() {
   const { username } = Route.useParams();
   const qc = useQueryClient();
   const [showBubbleOverlay, setShowBubbleOverlay] = useState(false);
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [likeCounts, setLikeCounts] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     applyTheme(getTheme());
@@ -99,6 +101,23 @@ function ProfilePage() {
   const toggleLike = useMutation({
     mutationFn: async ({ postId, hasLiked }: { postId: string; hasLiked: boolean }) => {
       const uid = await currentUserId();
+      // Optimistic update
+      setLikedPosts(prev => {
+        const next = new Set(prev);
+        if (hasLiked) {
+          next.delete(postId);
+        } else {
+          next.add(postId);
+        }
+        return next;
+      });
+      setLikeCounts(prev => {
+        const next = new Map(prev);
+        const current = next.get(postId) ?? 0;
+        next.set(postId, hasLiked ? current - 1 : current + 1);
+        return next;
+      });
+
       if (hasLiked) {
         const { error } = await supabase
           .from("likes")
@@ -295,7 +314,9 @@ function ProfilePage() {
                       }
                     : undefined
                 }
-                onToggleLike={() => toggleLike.mutate({ postId: p.id, hasLiked: false })}
+                hasLiked={likedPosts.has(p.id)}
+                likeCount={likeCounts.get(p.id) ?? 0}
+                onToggleLike={() => toggleLike.mutate({ postId: p.id, hasLiked: likedPosts.has(p.id) })}
                 isPinned={p.is_pinned}
                 onTogglePin={
                   data.me === data.profile.id

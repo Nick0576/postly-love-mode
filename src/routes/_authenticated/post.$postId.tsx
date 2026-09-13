@@ -171,6 +171,12 @@ function PostPage() {
   const toggleLike = useMutation({
     mutationFn: async () => {
       const uid = await currentUserId();
+      const newLikedState = !hasLiked;
+      
+      // Optimistic update - invalidate immediately to refetch
+      void qc.invalidateQueries({ queryKey: ["has-liked", postId, me] });
+      void qc.invalidateQueries({ queryKey: ["like-count", postId] });
+
       if (hasLiked) {
         const { error } = await supabase
           .from("likes")
