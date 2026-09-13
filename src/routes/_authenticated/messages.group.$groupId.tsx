@@ -25,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/messages/group/$groupId")(
 
 function GroupChat() {
   const { groupId } = Route.useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -58,7 +59,7 @@ function GroupChat() {
         supabase.from("group_chats").select("*").eq("id", groupId).maybeSingle(),
         getGroupMembers(groupId),
       ]);
-      return { me, msgs: (msgs.data ?? []) as Msg[], group: group as GroupChat | null, members };
+      return { me, msgs: (msgs.data ?? []) as unknown as Msg[], group: (group.data ?? null) as GroupChat | null, members };
     },
   });
 
@@ -76,12 +77,11 @@ function GroupChat() {
     const body = text.trim();
     if (!body || !data) return;
     setText("");
-    await supabase.from("messages").insert({ 
-      sender_id: data.me, 
-      recipient_id: null, 
-      group_id: groupId, 
-      content: body 
-    });
+    await supabase.from("messages").insert({
+      sender_id: data.me,
+      group_id: groupId,
+      content: body,
+    } as never);
     void qc.invalidateQueries({ queryKey: ["group-chat", groupId] });
   }
 
@@ -89,14 +89,13 @@ function GroupChat() {
     if (!data) return;
     const file = new File([audioBlob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
     const media_url = await uploadMedia(file);
-    await supabase.from("messages").insert({ 
-      sender_id: data.me, 
-      recipient_id: null,
+    await supabase.from("messages").insert({
+      sender_id: data.me,
       group_id: groupId,
       content: "",
       media_url,
-      media_type: "audio"
-    });
+      media_type: "audio",
+    } as never);
     void qc.invalidateQueries({ queryKey: ["group-chat", groupId] });
   }
 
@@ -276,7 +275,7 @@ function GroupChat() {
               <Button onClick={() => setIsRenaming(false)} variant="outline" size="sm">Cancel</Button>
             </div>
           ) : (
-            <Button onClick={() => { setIsRenaming(true); setNewGroupName(data.group.name); }} variant="outline" size="sm" className="w-full">
+            <Button onClick={() => { setIsRenaming(true); setNewGroupName(data.group?.name ?? ""); }} variant="outline" size="sm" className="w-full">
               <Edit2 className="h-4 w-4 mr-2" /> Rename Group
             </Button>
           )}
