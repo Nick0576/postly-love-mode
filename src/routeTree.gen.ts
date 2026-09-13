@@ -13,15 +13,21 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedComposeRouteImport } from './routes/_authenticated/compose'
+import { Route as AuthenticatedCreateGroupRouteImport } from './routes/_authenticated/create-group'
 import { Route as AuthenticatedDonateRouteImport } from './routes/_authenticated/donate'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedLoveRouteImport } from './routes/_authenticated/love'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedStoryRouteImport } from './routes/_authenticated/story'
 import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated/messages.index'
 import { Route as AuthenticatedMessagesUserIdRouteImport } from './routes/_authenticated/messages.$userId'
 import { Route as AuthenticatedPostPostIdRouteImport } from './routes/_authenticated/post.$postId'
-import { Route as AuthenticatedUUsernameRouteImport } from './routes/_authenticated/u.$username'
+import { Route as AuthenticatedMessagesGroupGroupIdRouteImport } from './routes/_authenticated/messages.group.$groupId'
+import { Route as AuthenticatedStoryViewStoryIdRouteImport } from './routes/_authenticated/story.view.$storyId'
+import { Route as AuthenticatedUUsernameIndexRouteImport } from './routes/_authenticated/u.$username/index'
+import { Route as AuthenticatedUUsernameFollowersRouteImport } from './routes/_authenticated/u.$username/followers'
+import { Route as AuthenticatedUUsernameFollowingRouteImport } from './routes/_authenticated/u.$username/following'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -42,6 +48,12 @@ const AuthenticatedComposeRoute = AuthenticatedComposeRouteImport.update({
   path: '/compose',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCreateGroupRoute =
+  AuthenticatedCreateGroupRouteImport.update({
+    id: '/create-group',
+    path: '/create-group',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDonateRoute = AuthenticatedDonateRouteImport.update({
   id: '/donate',
   path: '/donate',
@@ -67,6 +79,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedStoryRoute = AuthenticatedStoryRouteImport.update({
+  id: '/story',
+  path: '/story',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMessagesIndexRoute =
   AuthenticatedMessagesIndexRouteImport.update({
     id: '/messages/',
@@ -84,39 +101,76 @@ const AuthenticatedPostPostIdRoute = AuthenticatedPostPostIdRouteImport.update({
   path: '/post/$postId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedUUsernameRoute = AuthenticatedUUsernameRouteImport.update({
-  id: '/u/$username',
-  path: '/u/$username',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+const AuthenticatedMessagesGroupGroupIdRoute =
+  AuthenticatedMessagesGroupGroupIdRouteImport.update({
+    id: '/messages/group/$groupId',
+    path: '/messages/group/$groupId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedStoryViewStoryIdRoute =
+  AuthenticatedStoryViewStoryIdRouteImport.update({
+    id: '/view/$storyId',
+    path: '/view/$storyId',
+    getParentRoute: () => AuthenticatedStoryRoute,
+  } as any)
+const AuthenticatedUUsernameIndexRoute =
+  AuthenticatedUUsernameIndexRouteImport.update({
+    id: '/u/$username/',
+    path: '/u/$username/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedUUsernameFollowersRoute =
+  AuthenticatedUUsernameFollowersRouteImport.update({
+    id: '/u/$username/followers',
+    path: '/u/$username/followers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedUUsernameFollowingRoute =
+  AuthenticatedUUsernameFollowingRouteImport.update({
+    id: '/u/$username/following',
+    path: '/u/$username/following',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/compose': typeof AuthenticatedComposeRoute
+  '/create-group': typeof AuthenticatedCreateGroupRoute
   '/donate': typeof AuthenticatedDonateRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/love': typeof AuthenticatedLoveRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/story': typeof AuthenticatedStoryRouteWithChildren
   '/messages/$userId': typeof AuthenticatedMessagesUserIdRoute
   '/post/$postId': typeof AuthenticatedPostPostIdRoute
-  '/u/$username': typeof AuthenticatedUUsernameRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/messages/group/$groupId': typeof AuthenticatedMessagesGroupGroupIdRoute
+  '/story/view/$storyId': typeof AuthenticatedStoryViewStoryIdRoute
+  '/u/$username/followers': typeof AuthenticatedUUsernameFollowersRoute
+  '/u/$username/following': typeof AuthenticatedUUsernameFollowingRoute
+  '/u/$username/': typeof AuthenticatedUUsernameIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/compose': typeof AuthenticatedComposeRoute
+  '/create-group': typeof AuthenticatedCreateGroupRoute
   '/donate': typeof AuthenticatedDonateRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/love': typeof AuthenticatedLoveRoute
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/story': typeof AuthenticatedStoryRouteWithChildren
   '/messages/$userId': typeof AuthenticatedMessagesUserIdRoute
   '/post/$postId': typeof AuthenticatedPostPostIdRoute
-  '/u/$username': typeof AuthenticatedUUsernameRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
+  '/messages/group/$groupId': typeof AuthenticatedMessagesGroupGroupIdRoute
+  '/story/view/$storyId': typeof AuthenticatedStoryViewStoryIdRoute
+  '/u/$username/followers': typeof AuthenticatedUUsernameFollowersRoute
+  '/u/$username/following': typeof AuthenticatedUUsernameFollowingRoute
+  '/u/$username': typeof AuthenticatedUUsernameIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -124,15 +178,21 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/compose': typeof AuthenticatedComposeRoute
+  '/_authenticated/create-group': typeof AuthenticatedCreateGroupRoute
   '/_authenticated/donate': typeof AuthenticatedDonateRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/love': typeof AuthenticatedLoveRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/story': typeof AuthenticatedStoryRouteWithChildren
   '/_authenticated/messages/$userId': typeof AuthenticatedMessagesUserIdRoute
   '/_authenticated/post/$postId': typeof AuthenticatedPostPostIdRoute
-  '/_authenticated/u/$username': typeof AuthenticatedUUsernameRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/_authenticated/messages/group/$groupId': typeof AuthenticatedMessagesGroupGroupIdRoute
+  '/_authenticated/story/view/$storyId': typeof AuthenticatedStoryViewStoryIdRoute
+  '/_authenticated/u/$username/followers': typeof AuthenticatedUUsernameFollowersRoute
+  '/_authenticated/u/$username/following': typeof AuthenticatedUUsernameFollowingRoute
+  '/_authenticated/u/$username/': typeof AuthenticatedUUsernameIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -140,44 +200,62 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/compose'
+    | '/create-group'
     | '/donate'
     | '/feed'
     | '/love'
     | '/search'
     | '/settings'
+    | '/story'
     | '/messages/$userId'
     | '/post/$postId'
-    | '/u/$username'
     | '/messages/'
+    | '/messages/group/$groupId'
+    | '/story/view/$storyId'
+    | '/u/$username/followers'
+    | '/u/$username/following'
+    | '/u/$username/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/compose'
+    | '/create-group'
     | '/donate'
     | '/feed'
     | '/love'
     | '/search'
     | '/settings'
+    | '/story'
     | '/messages/$userId'
     | '/post/$postId'
-    | '/u/$username'
     | '/messages'
+    | '/messages/group/$groupId'
+    | '/story/view/$storyId'
+    | '/u/$username/followers'
+    | '/u/$username/following'
+    | '/u/$username'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/compose'
+    | '/_authenticated/create-group'
     | '/_authenticated/donate'
     | '/_authenticated/feed'
     | '/_authenticated/love'
     | '/_authenticated/search'
     | '/_authenticated/settings'
+    | '/_authenticated/story'
     | '/_authenticated/messages/$userId'
     | '/_authenticated/post/$postId'
-    | '/_authenticated/u/$username'
     | '/_authenticated/messages/'
+    | '/_authenticated/messages/group/$groupId'
+    | '/_authenticated/story/view/$storyId'
+    | '/_authenticated/u/$username/followers'
+    | '/_authenticated/u/$username/following'
+    | '/_authenticated/u/$username/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -216,6 +294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedComposeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/create-group': {
+      id: '/_authenticated/create-group'
+      path: '/create-group'
+      fullPath: '/create-group'
+      preLoaderRoute: typeof AuthenticatedCreateGroupRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/donate': {
       id: '/_authenticated/donate'
       path: '/donate'
@@ -251,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/story': {
+      id: '/_authenticated/story'
+      path: '/story'
+      fullPath: '/story'
+      preLoaderRoute: typeof AuthenticatedStoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/messages/': {
       id: '/_authenticated/messages/'
       path: '/messages'
@@ -272,40 +364,90 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPostPostIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/u/$username': {
-      id: '/_authenticated/u/$username'
+    '/_authenticated/messages/group/$groupId': {
+      id: '/_authenticated/messages/group/$groupId'
+      path: '/messages/group/$groupId'
+      fullPath: '/messages/group/$groupId'
+      preLoaderRoute: typeof AuthenticatedMessagesGroupGroupIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/story/view/$storyId': {
+      id: '/_authenticated/story/view/$storyId'
+      path: '/view/$storyId'
+      fullPath: '/story/view/$storyId'
+      preLoaderRoute: typeof AuthenticatedStoryViewStoryIdRouteImport
+      parentRoute: typeof AuthenticatedStoryRoute
+    }
+    '/_authenticated/u/$username/': {
+      id: '/_authenticated/u/$username/'
       path: '/u/$username'
-      fullPath: '/u/$username'
-      preLoaderRoute: typeof AuthenticatedUUsernameRouteImport
+      fullPath: '/u/$username/'
+      preLoaderRoute: typeof AuthenticatedUUsernameIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/u/$username/followers': {
+      id: '/_authenticated/u/$username/followers'
+      path: '/u/$username/followers'
+      fullPath: '/u/$username/followers'
+      preLoaderRoute: typeof AuthenticatedUUsernameFollowersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/u/$username/following': {
+      id: '/_authenticated/u/$username/following'
+      path: '/u/$username/following'
+      fullPath: '/u/$username/following'
+      preLoaderRoute: typeof AuthenticatedUUsernameFollowingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
+interface AuthenticatedStoryRouteChildren {
+  AuthenticatedStoryViewStoryIdRoute: typeof AuthenticatedStoryViewStoryIdRoute
+}
+
+const AuthenticatedStoryRouteChildren: AuthenticatedStoryRouteChildren = {
+  AuthenticatedStoryViewStoryIdRoute: AuthenticatedStoryViewStoryIdRoute,
+}
+
+const AuthenticatedStoryRouteWithChildren =
+  AuthenticatedStoryRoute._addFileChildren(AuthenticatedStoryRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedComposeRoute: typeof AuthenticatedComposeRoute
+  AuthenticatedCreateGroupRoute: typeof AuthenticatedCreateGroupRoute
   AuthenticatedDonateRoute: typeof AuthenticatedDonateRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
   AuthenticatedLoveRoute: typeof AuthenticatedLoveRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedStoryRoute: typeof AuthenticatedStoryRouteWithChildren
   AuthenticatedMessagesUserIdRoute: typeof AuthenticatedMessagesUserIdRoute
   AuthenticatedPostPostIdRoute: typeof AuthenticatedPostPostIdRoute
-  AuthenticatedUUsernameRoute: typeof AuthenticatedUUsernameRoute
   AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
+  AuthenticatedMessagesGroupGroupIdRoute: typeof AuthenticatedMessagesGroupGroupIdRoute
+  AuthenticatedUUsernameFollowersRoute: typeof AuthenticatedUUsernameFollowersRoute
+  AuthenticatedUUsernameFollowingRoute: typeof AuthenticatedUUsernameFollowingRoute
+  AuthenticatedUUsernameIndexRoute: typeof AuthenticatedUUsernameIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedComposeRoute: AuthenticatedComposeRoute,
+  AuthenticatedCreateGroupRoute: AuthenticatedCreateGroupRoute,
   AuthenticatedDonateRoute: AuthenticatedDonateRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
   AuthenticatedLoveRoute: AuthenticatedLoveRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedStoryRoute: AuthenticatedStoryRouteWithChildren,
   AuthenticatedMessagesUserIdRoute: AuthenticatedMessagesUserIdRoute,
   AuthenticatedPostPostIdRoute: AuthenticatedPostPostIdRoute,
-  AuthenticatedUUsernameRoute: AuthenticatedUUsernameRoute,
   AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
+  AuthenticatedMessagesGroupGroupIdRoute:
+    AuthenticatedMessagesGroupGroupIdRoute,
+  AuthenticatedUUsernameFollowersRoute: AuthenticatedUUsernameFollowersRoute,
+  AuthenticatedUUsernameFollowingRoute: AuthenticatedUUsernameFollowingRoute,
+  AuthenticatedUUsernameIndexRoute: AuthenticatedUUsernameIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

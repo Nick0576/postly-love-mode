@@ -4,7 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mic, Video, Send, X, Edit2 } from "lucide-react";
+import { Mic, Video, Send, X, Edit2, ImagePlus, Smile } from "lucide-react";
+
+const STICKERS = ["😀","😂","🥰","😍","😎","🤔","😭","😡","👍","👎","🙏","👏","🔥","💯","🎉","✨","❤️","💔","💕","🌹","🐱","🐶","🍕","☕","🌙","⭐","🎵","⚽","🎮","🚀","🌈","💎"];
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, uploadMedia, signedUrl, type Profile, editMessage } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
@@ -31,6 +33,9 @@ function Chat() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [showStickers, setShowStickers] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<number | null>(null);
@@ -86,6 +91,36 @@ function Chat() {
       content: "",
       media_url,
       media_type: "audio"
+    });
+    void qc.invalidateQueries({ queryKey: ["chat", userId] });
+  }
+
+  async function sendFile(file: File) {
+    if (!data) return;
+    setUploading(true);
+    try {
+      const media_url = await uploadMedia(file);
+      await supabase.from("messages").insert({
+        sender_id: data.me,
+        recipient_id: userId,
+        content: "",
+        media_url,
+        media_type: file.type.startsWith("video") ? "video" : "image",
+      });
+      void qc.invalidateQueries({ queryKey: ["chat", userId] });
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function sendSticker(sticker: string) {
+    if (!data) return;
+    setShowStickers(false);
+    await supabase.from("messages").insert({
+      sender_id: data.me,
+      recipient_id: userId,
+      content: sticker,
+      media_type: "sticker",
     });
     void qc.invalidateQueries({ queryKey: ["chat", userId] });
   }
@@ -236,6 +271,13 @@ function Chat() {
                 {m.media_type === "audio" && m.media_url && (
                   <VoiceMessage mediaUrl={m.media_url} />
                 )}
+                {m.media_type === "image" && m.media_url && (
+                  <ChatMedia mediaUrl={m.media_url} kind="image" />
+                )}
+                {m.media_type === "video" && m.media_url && (
+                  <ChatMedia mediaUrl={m.media_url} kind="video" />
+                )}
+                {m.media_type === "sticker" && <span className="text-4xl">{m.content}</span>}
                 {m.content && !m.media_type && m.content}
               </>
             )}
@@ -263,7 +305,33 @@ function Chat() {
         ))}
         {data && !data.msgs.length && <p className="text-sm text-muted-foreground">Say hello.</p>}
       </div>
+      {showStickers && (
+        <div className="fixed inset-x-0 bottom-32 mx-auto grid max-w-xl grid-cols-8 gap-1 rounded-2xl border bg-background p-3 shadow-lg">
+          {STICKERS.map((s) => (
+            <button key={s} className="text-2xl" onClick={() => void sendSticker(s)}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="fixed inset-x-0 bottom-16 mx-auto flex max-w-xl gap-2 bg-background px-4 py-3">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*,video/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) void sendFile(f);
+          }}
+        />
+        <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={isRecording || uploading}>
+          <ImagePlus className="h-4 w-4" />
+        </Button>
+        <Button variant="outline" onClick={() => setShowStickers((v) => !v)} disabled={isRecording}>
+          <Smile className="h-4 w-4" />
+        </Button>
         {isRecording ? (
           <Button variant="destructive" onClick={stopRecording} className="flex items-center gap-2">
             <X className="h-4 w-4" />
@@ -304,4 +372,16 @@ function VoiceMessage({ mediaUrl }: { mediaUrl: string }) {
       Your browser does not support audio.
     </audio>
   );
+}
+
+function ChatMedia({ mediaUrl, kind }: { mediaUrl: string; kind: "image" | "video" }) {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    void signedUrl(mediaUrl).then(setUrl);
+  }, [mediaUrl]);
+
+  if (!url) return <div className="text-xs">Loading…</div>;
+  if (kind === "video") return <video controls className="max-h-64 rounded-lg" src={url} />;
+  return <img src={url} alt="Shared media" className="max-h-64 rounded-lg" />;
 }

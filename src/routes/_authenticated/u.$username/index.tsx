@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { POST_SELECT, currentUserId, type PostRow, type Profile, isUserOnline } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 
-export const Route = createFileRoute("/_authenticated/u/$username")({
+export const Route = createFileRoute("/_authenticated/u/$username/")({
   head: () => ({
     meta: [
       { title: "Profile — Postly" },
@@ -203,7 +203,7 @@ function ProfilePage() {
         </>
       )}
       
-      {showBubbleOverlay && data.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
+      {showBubbleOverlay && data?.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
           onClick={() => setShowBubbleOverlay(false)}

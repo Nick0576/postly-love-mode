@@ -39,7 +39,7 @@ function FollowingList() {
       const { data } = await supabase
         .from("follows")
         .select("following_id,profiles!follows_following_id_fkey(*)")
-        .eq("follower_id", profile?.id);
+        .eq("follower_id", profile!.id);
       return data?.map(f => f.profiles) as Profile[] || [];
     },
   });
