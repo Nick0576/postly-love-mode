@@ -130,21 +130,21 @@ function ProfilePage() {
                 <h2 className="truncate text-lg font-bold">
                   {data.profile.display_name || data.profile.username}
                 </h2>
-                <p className="text-xs text-muted-foreground">
-                  @{data.profile.username} ·{" "}
-                  <Button variant="link" className="p-0 h-auto text-primary font-medium" asChild>
+                <div className="flex items-center gap-2 mt-1">
+                  <Button variant="outline" size="sm" className="h-7" asChild>
                     <Link to="/u/$username/followers" params={{ username: data.profile.username }}>
                       {data.followers} followers
                     </Link>
-                  </Button>{" "}
-                  ·{" "}
-                  <Button variant="link" className="p-0 h-auto text-primary font-medium" asChild>
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-7" asChild>
                     <Link to="/u/$username/following" params={{ username: data.profile.username }}>
                       {data.followingCount} following
                     </Link>
                   </Button>
-                  {isUserOnline(data.profile) ? " · Online" : " · Offline"}
-                </p>
+                  <span className="text-xs text-muted-foreground">
+                    {isUserOnline(data.profile) ? "Online" : "Offline"}
+                  </span>
+                </div>
               </div>
             </div>
             {data.profile.bio && <p className="mt-3 text-sm">{data.profile.bio}</p>}
