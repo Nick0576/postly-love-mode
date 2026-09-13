@@ -87,13 +87,35 @@ export async function switchAccount(accountId: string): Promise<void> {
   // Sign out current session
   await supabase.auth.signOut();
 
-  // Set new session
-  const { error } = await supabase.auth.setSession({
+  // Try to set session with stored tokens
+  const { error: sessionError } = await supabase.auth.setSession({
     access_token: account.access_token,
     refresh_token: account.refresh_token,
   });
 
-  if (error) throw error;
+  if (sessionError) {
+    // If session setting fails, try to refresh the token
+    const { error: refreshError } = await supabase.auth.refreshSession({
+      refresh_token: account.refresh_token,
+    });
+
+    if (refreshError) {
+      throw new Error("Account session expired. Please remove and re-add this account.");
+    }
+
+    // Get the new session and update stored account
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      account.access_token = session.access_token;
+      account.refresh_token = session.refresh_token;
+      
+      // Update the account in storage
+      const updatedAccounts = accounts.map(a => 
+        a.id === accountId ? account : a
+      );
+      saveStoredAccounts(updatedAccounts);
+    }
+  }
 
   setActiveAccountId(accountId);
 }
