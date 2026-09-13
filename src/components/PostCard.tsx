@@ -31,15 +31,14 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {onTogglePin && (
-            <button
-              onClick={onTogglePin}
-              className={`text-xs ${isPinned ? "text-primary" : "text-muted-foreground"} hover:text-primary`}
-              title={isPinned ? "Unpin post" : "Pin post"}
-            >
-              <Pin className={`h-4 w-4 ${isPinned ? "fill-current" : ""}`} />
-            </button>
-          )}
+          <button
+            onClick={onTogglePin}
+            className={`text-xs ${isPinned ? "text-primary" : "text-muted-foreground"} hover:text-primary`}
+            title={isPinned ? "Unpin post" : "Pin post"}
+            disabled={!onTogglePin}
+          >
+            <Pin className={`h-4 w-4 ${isPinned ? "fill-current" : ""}`} />
+          </button>
           {onEdit && (
             <button onClick={onEdit} className="text-xs text-muted-foreground hover:underline">
               Edit
