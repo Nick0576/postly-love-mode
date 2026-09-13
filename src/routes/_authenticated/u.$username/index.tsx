@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
+import { PostCard } from "@/components/PostCard";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, signedUrl, type Profile, isUserOnline, recordProfileView, getProfileViews, timeAgo, cleanupOldProfileViews } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
