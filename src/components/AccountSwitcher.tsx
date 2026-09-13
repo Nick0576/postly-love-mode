@@ -78,10 +78,8 @@ export function AccountSwitcher() {
       setAccounts(getStoredAccounts());
       setActiveAccount(getActiveAccount());
       toast.success("Account switched");
-      // Delay reload to allow session to establish
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      // Navigate to feed to ensure proper session loading
+      navigate({ to: "/feed" });
     } catch (error: any) {
       console.error("Failed to switch account:", error);
       toast.error(error.message || "Failed to switch account");

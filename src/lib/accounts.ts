@@ -103,6 +103,12 @@ export async function switchAccount(accountId: string): Promise<void> {
   const session = data.session;
   if (!session) throw new Error("No session returned");
 
+  // Verify the session is valid by checking the user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== accountId) {
+    throw new Error("Session verification failed");
+  }
+
   // Update stored account with fresh tokens
   account.access_token = session.access_token;
   account.refresh_token = session.refresh_token;
