@@ -121,8 +121,8 @@ function ProfilePage() {
   }
 
   return (
-    <AppShell title={data ? `@${data.profile.username}` : "Profile"}>
-      {data && (
+    <AppShell title={data?.profile ? `@${data.profile.username}` : "Profile"}>
+      {data && data.profile && (
         <>
           <div className="rounded-2xl border p-4 shadow-soft">
             {data.profile.banner_url && (
