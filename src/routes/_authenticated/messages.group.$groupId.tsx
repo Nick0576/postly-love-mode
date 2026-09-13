@@ -89,14 +89,13 @@ function GroupChat() {
     if (!data) return;
     const file = new File([audioBlob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
     const media_url = await uploadMedia(file);
-    await supabase.from("messages").insert({ 
-      sender_id: data.me, 
-      recipient_id: null,
+    await supabase.from("messages").insert({
+      sender_id: data.me,
       group_id: groupId,
       content: "",
       media_url,
-      media_type: "audio"
-    });
+      media_type: "audio",
+    } as never);
     void qc.invalidateQueries({ queryKey: ["group-chat", groupId] });
   }
 
