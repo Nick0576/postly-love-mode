@@ -1,14 +1,16 @@
 import { Link } from "@tanstack/react-router";
-import { MessageCircle, Heart } from "lucide-react";
+import { MessageCircle, Heart, Pin } from "lucide-react";
 import { Avatar, Media } from "@/components/Media";
 import { timeAgo, type PostRow } from "@/lib/postly";
 
-export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike }: { 
+export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, isPinned, onTogglePin }: { 
   post: PostRow; 
   onDelete?: (() => void) | undefined;
   hasLiked?: boolean;
   likeCount?: number;
   onToggleLike?: () => void;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
 }) {
   const author = post.profiles;
   return (
@@ -27,11 +29,22 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike }: 
             @{author?.username} · {timeAgo(post.created_at)}
           </p>
         </div>
-        {onDelete && (
-          <button onClick={onDelete} className="ml-auto text-xs text-destructive hover:underline">
-            Delete
-          </button>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          {onTogglePin && (
+            <button
+              onClick={onTogglePin}
+              className={`text-xs ${isPinned ? "text-primary" : "text-muted-foreground"} hover:text-primary`}
+              title={isPinned ? "Unpin post" : "Pin post"}
+            >
+              <Pin className={`h-4 w-4 ${isPinned ? "fill-current" : ""}`} />
+            </button>
+          )}
+          {onDelete && (
+            <button onClick={onDelete} className="text-xs text-destructive hover:underline">
+              Delete
+            </button>
+          )}
+        </div>
       </div>
       <p className="mt-3 whitespace-pre-wrap break-words text-[0.95rem]">{post.content}</p>
       <Media path={post.media_url} />

@@ -45,7 +45,7 @@ function ProfilePage() {
       if (!profile) return null;
       const p = profile as Profile;
       const [posts, following, followers, followingCount, followsBack, loveAnswers] = await Promise.all([
-        supabase.from("posts").select(POST_SELECT).eq("user_id", p.id).order("created_at", { ascending: false }).limit(20),
+        supabase.from("posts").select(POST_SELECT).eq("user_id", p.id).order("is_pinned", { ascending: false }).order("created_at", { ascending: false }).limit(20),
         supabase.from("follows").select("follower_id").eq("follower_id", me).eq("following_id", p.id).maybeSingle(),
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", p.id),
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", p.id),
@@ -110,6 +110,34 @@ function ProfilePage() {
         const { error } = await supabase
           .from("likes")
           .insert({ post_id: postId, user_id: uid });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
+  });
+
+  const togglePin = useMutation({
+    mutationFn: async ({ postId, isPinned }: { postId: string; isPinned: boolean }) => {
+      const uid = await currentUserId();
+      if (isPinned) {
+        const { error } = await supabase
+          .from("posts")
+          .update({ is_pinned: false })
+          .eq("id", postId)
+          .eq("user_id", uid);
+        if (error) throw error;
+      } else {
+        // First unpin any existing pinned post
+        await supabase
+          .from("posts")
+          .update({ is_pinned: false })
+          .eq("user_id", uid)
+          .eq("is_pinned", true);
+        const { error } = await supabase
+          .from("posts")
+          .update({ is_pinned: true })
+          .eq("id", postId)
+          .eq("user_id", uid);
         if (error) throw error;
       }
     },
@@ -268,6 +296,12 @@ function ProfilePage() {
                     : undefined
                 }
                 onToggleLike={() => toggleLike.mutate({ postId: p.id, hasLiked: false })}
+                isPinned={p.is_pinned}
+                onTogglePin={
+                  data.me === data.profile.id
+                    ? () => togglePin.mutate({ postId: p.id, isPinned: p.is_pinned })
+                    : undefined
+                }
               />
             ))}
             {!data.posts.length && <p className="text-sm text-muted-foreground">No posts yet.</p>}
