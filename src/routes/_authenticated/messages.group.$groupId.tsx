@@ -77,12 +77,11 @@ function GroupChat() {
     const body = text.trim();
     if (!body || !data) return;
     setText("");
-    await supabase.from("messages").insert({ 
-      sender_id: data.me, 
-      recipient_id: null, 
-      group_id: groupId, 
-      content: body 
-    });
+    await supabase.from("messages").insert({
+      sender_id: data.me,
+      group_id: groupId,
+      content: body,
+    } as never);
     void qc.invalidateQueries({ queryKey: ["group-chat", groupId] });
   }
 
