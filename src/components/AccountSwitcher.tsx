@@ -41,6 +41,9 @@ export function AccountSwitcher() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [chatBubble, setChatBubble] = useState<{ text: string; enabled: boolean } | null>(null);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [switchingAccountId, setSwitchingAccountId] = useState<string | null>(null);
+  const [switchPassword, setSwitchPassword] = useState("");
 
   useEffect(() => {
     async function loadChatBubble() {
@@ -73,12 +76,39 @@ export function AccountSwitcher() {
   }, []);
 
   const handleSwitchAccount = async (accountId: string) => {
+    const account = accounts.find(a => a.id === accountId);
+    if (!account) return;
+
+    // If account doesn't have stored password, show password dialog
+    if (!account.password) {
+      setSwitchingAccountId(accountId);
+      setPasswordDialogOpen(true);
+      return;
+    }
+
     try {
       await switchAccount(accountId);
       setAccounts(getStoredAccounts());
       setActiveAccount(getActiveAccount());
       toast.success("Account switched");
-      // Navigate to feed to ensure proper session loading
+      navigate({ to: "/feed" });
+    } catch (error: any) {
+      console.error("Failed to switch account:", error);
+      toast.error(error.message || "Failed to switch account");
+    }
+  };
+
+  const handleSwitchWithPassword = async () => {
+    if (!switchingAccountId) return;
+    
+    try {
+      await switchAccount(switchingAccountId, switchPassword);
+      setAccounts(getStoredAccounts());
+      setActiveAccount(getActiveAccount());
+      setPasswordDialogOpen(false);
+      setSwitchingAccountId(null);
+      setSwitchPassword("");
+      toast.success("Account switched");
       navigate({ to: "/feed" });
     } catch (error: any) {
       console.error("Failed to switch account:", error);
@@ -231,6 +261,38 @@ export function AccountSwitcher() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enter Password</DialogTitle>
+            <DialogDescription>
+              Enter your password to switch to this account. It will be saved for future use.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="switch-password">Password</Label>
+              <Input
+                id="switch-password"
+                type="password"
+                placeholder="••••••••"
+                value={switchPassword}
+                onChange={(e) => setSwitchPassword(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleSwitchWithPassword} disabled={!switchPassword}>
+              Switch Account
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

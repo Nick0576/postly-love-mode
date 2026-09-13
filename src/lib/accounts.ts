@@ -6,7 +6,7 @@ const ACTIVE_ACCOUNT_KEY = "postly-active-account";
 export interface StoredAccount {
   id: string;
   email: string;
-  password: string;
+  password?: string;
   access_token: string;
   refresh_token: string;
   display_name: string;
@@ -81,7 +81,7 @@ export async function addAccount(email: string, password: string): Promise<Store
   return account;
 }
 
-export async function switchAccount(accountId: string): Promise<void> {
+export async function switchAccount(accountId: string, password?: string): Promise<void> {
   const accounts = getStoredAccounts();
   const account = accounts.find(a => a.id === accountId);
   if (!account) throw new Error("Account not found");
@@ -89,34 +89,69 @@ export async function switchAccount(accountId: string): Promise<void> {
   // Sign out current session
   await supabase.auth.signOut();
 
-  // Sign in with stored credentials to get fresh tokens
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: account.email,
-    password: account.password,
-  });
+  // If account has stored password, use it
+  if (account.password) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: account.email,
+      password: account.password,
+    });
 
-  if (error) {
-    console.error("Sign in error:", error);
-    throw new Error(`Failed to switch account: ${error.message}. Please remove and re-add this account.`);
+    if (error) {
+      console.error("Sign in error:", error);
+      throw new Error(`Failed to switch account: ${error.message}. Please remove and re-add this account.`);
+    }
+
+    const session = data.session;
+    if (!session) throw new Error("No session returned");
+
+    // Verify the session is valid by checking the user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.id !== accountId) {
+      throw new Error("Session verification failed");
+    }
+
+    // Update stored account with fresh tokens
+    account.access_token = session.access_token;
+    account.refresh_token = session.refresh_token;
+    
+    const updatedAccounts = accounts.map(a => 
+      a.id === accountId ? account : a
+    );
+    saveStoredAccounts(updatedAccounts);
+  } else if (password) {
+    // Use provided password
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: account.email,
+      password: password,
+    });
+
+    if (error) {
+      console.error("Sign in error:", error);
+      throw new Error(`Failed to switch account: ${error.message}.`);
+    }
+
+    const session = data.session;
+    if (!session) throw new Error("No session returned");
+
+    // Verify the session is valid by checking the user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.id !== accountId) {
+      throw new Error("Session verification failed");
+    }
+
+    // Update stored account with fresh tokens and save password
+    account.access_token = session.access_token;
+    account.refresh_token = session.refresh_token;
+    account.password = password;
+    
+    const updatedAccounts = accounts.map(a => 
+      a.id === accountId ? account : a
+    );
+    saveStoredAccounts(updatedAccounts);
+  } else {
+    // No password available, throw error to prompt user
+    throw new Error("PASSWORD_REQUIRED");
   }
-
-  const session = data.session;
-  if (!session) throw new Error("No session returned");
-
-  // Verify the session is valid by checking the user
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.id !== accountId) {
-    throw new Error("Session verification failed");
-  }
-
-  // Update stored account with fresh tokens
-  account.access_token = session.access_token;
-  account.refresh_token = session.refresh_token;
-  
-  const updatedAccounts = accounts.map(a => 
-    a.id === accountId ? account : a
-  );
-  saveStoredAccounts(updatedAccounts);
 
   setActiveAccountId(accountId);
 }
