@@ -61,7 +61,7 @@ function Auth() {
             refresh_token: session.refresh_token,
             display_name: profile?.display_name || "",
             username: profile?.username || "",
-            avatar_url: profile?.avatar_url,
+            avatar_url: profile?.avatar_url ?? null,
           };
 
           const accounts = getStoredAccounts();

@@ -11,6 +11,7 @@ export type Profile = {
   chat_bubble_enabled: boolean;
   last_seen: string | null;
   is_online: boolean;
+  profile_view_history_enabled: boolean;
 };
 
 export type Story = {
@@ -49,7 +50,7 @@ export type PostRow = {
 };
 
 export const POST_SELECT =
-  "id,user_id,content,media_url,created_at,profiles(id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online)";
+  "id,user_id,content,media_url,created_at,profiles(id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online,profile_view_history_enabled)";
 
 export async function currentUserId(): Promise<string> {
   const { data } = await supabase.auth.getUser();
@@ -199,6 +200,70 @@ export async function editMessage(messageId: string, content: string): Promise<v
     .from("messages")
     .update({ content })
     .eq("id", messageId);
+  if (error) throw error;
+}
+
+// Profile view utilities
+export async function recordProfileView(viewedUserId: string): Promise<void> {
+  const viewerId = await currentUserId();
+  
+  // Check if viewer has profile view history enabled
+  const { data: viewer } = await supabase
+    .from("profiles")
+    .select("profile_view_history_enabled")
+    .eq("id", viewerId)
+    .single();
+  
+  if (!viewer?.profile_view_history_enabled) return;
+  
+  // Check if viewed user has profile view history enabled
+  const { data: viewedUser } = await supabase
+    .from("profiles")
+    .select("profile_view_history_enabled")
+    .eq("id", viewedUserId)
+    .single();
+  
+  if (!viewedUser?.profile_view_history_enabled) return;
+  
+  // Don't record if viewing own profile
+  if (viewerId === viewedUserId) return;
+  
+  // Upsert profile view (update timestamp if exists, insert if not)
+  const { error } = await supabase
+    .from("profile_views")
+    .upsert({ 
+      viewer_id: viewerId, 
+      viewed_user_id: viewedUserId,
+      viewed_at: new Date().toISOString()
+    }, { 
+      onConflict: "viewer_id,viewed_user_id" 
+    });
+  
+  if (error) throw error;
+}
+
+export async function getProfileViews(userId: string): Promise<{ viewer: Profile; viewed_at: string }[]> {
+  const { data, error } = await supabase
+    .from("profile_views")
+    .select("viewer_id,viewed_at,profiles(*)")
+    .eq("viewed_user_id", userId)
+    .order("viewed_at", { ascending: false })
+    .limit(50);
+  
+  if (error) throw error;
+  
+  return (data ?? []).map((v: any) => ({
+    viewer: v.profiles as Profile,
+    viewed_at: v.viewed_at
+  }));
+}
+
+export async function cleanupOldProfileViews(): Promise<void> {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await supabase
+    .from("profile_views")
+    .delete()
+    .lt("viewed_at", thirtyDaysAgo);
   if (error) throw error;
 }
 

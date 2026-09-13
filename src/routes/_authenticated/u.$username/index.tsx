@@ -5,12 +5,12 @@ import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, signedUrl, type Profile, isUserOnline } from "@/lib/postly";
+import { currentUserId, signedUrl, type Profile, isUserOnline, recordProfileView, getProfileViews, timeAgo, cleanupOldProfileViews } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 import type { PostRow } from "@/lib/postly";
 import { POST_SELECT } from "@/lib/postly";
 
-export const Route = createFileRoute("/_authenticated/u/$username")({
+export const Route = createFileRoute("/_authenticated/u/$username/")({
   head: () => ({
     meta: [
       { title: "Profile — Postly" },
@@ -37,7 +37,7 @@ function ProfilePage() {
       const me = await currentUserId();
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online")
+        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online,profile_view_history_enabled")
         .eq("username", username)
         .maybeSingle();
       if (!profile) return null;
@@ -93,6 +93,24 @@ function ProfilePage() {
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
   });
+
+  useEffect(() => {
+    if (data && data.me !== data.profile.id) {
+      void recordProfileView(data.profile.id);
+    }
+  }, [data]);
+
+  const { data: profileViews } = useQuery({
+    queryKey: ["profile-views", data?.profile.id],
+    queryFn: () => data ? getProfileViews(data.profile.id) : Promise.resolve([]),
+    enabled: !!data && data.me === data.profile.id && data.profile.profile_view_history_enabled,
+  });
+
+  useEffect(() => {
+    if (data && data.me === data.profile.id) {
+      void cleanupOldProfileViews();
+    }
+  }, [data]);
 
   if (data === null) {
     return (
@@ -189,6 +207,32 @@ function ProfilePage() {
               )}
             </div>
           )}
+          {data.me === data.profile.id && data.profile.profile_view_history_enabled && (
+            <div className="mt-4 rounded-2xl border p-4">
+              <h3 className="font-semibold mb-3">Profile Views</h3>
+              {profileViews && profileViews.length > 0 ? (
+                <div className="space-y-2">
+                  {profileViews.map(({ viewer, viewed_at }) => (
+                    <Link
+                      key={viewer.id}
+                      to="/u/$username"
+                      params={{ username: viewer.username }}
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
+                    >
+                      <Avatar url={viewer.avatar_url} name={viewer.display_name || viewer.username} size={32} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{viewer.display_name || viewer.username}</p>
+                        <p className="text-xs text-muted-foreground">@{viewer.username}</p>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{timeAgo(viewed_at)}</span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No profile views yet.</p>
+              )}
+            </div>
+          )}
           <div className="mt-4 space-y-4">
             {data.posts.map((p) => (
               <PostCard
@@ -208,7 +252,7 @@ function ProfilePage() {
         </>
       )}
       
-      {showBubbleOverlay && data.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
+      {showBubbleOverlay && data?.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
           onClick={() => setShowBubbleOverlay(false)}
