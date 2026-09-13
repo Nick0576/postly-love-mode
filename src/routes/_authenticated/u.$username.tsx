@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { PostCard } from "@/components/PostCard";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { POST_SELECT, currentUserId, type PostRow, type Profile, isUserOnline } from "@/lib/postly";
+import { currentUserId, signedUrl, type Profile, isUserOnline } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
+import type { PostRow } from "@/lib/postly";
+import { POST_SELECT } from "@/lib/postly";
 
 export const Route = createFileRoute("/_authenticated/u/$username")({
   head: () => ({
@@ -37,7 +37,7 @@ function ProfilePage() {
       const me = await currentUserId();
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online")
+        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online")
         .eq("username", username)
         .maybeSingle();
       if (!profile) return null;
@@ -107,6 +107,11 @@ function ProfilePage() {
       {data && (
         <>
           <div className="rounded-2xl border p-4 shadow-soft">
+            {data.profile.banner_url && (
+              <div className="relative -mx-4 -mt-4 mb-4 h-32 overflow-hidden rounded-t-2xl">
+                <Banner url={data.profile.banner_url} />
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Avatar url={data.profile.avatar_url} name={data.profile.display_name} size={56} />
@@ -234,5 +239,23 @@ function ProfilePage() {
         </div>
       )}
     </AppShell>
+  );
+}
+
+function Banner({ url }: { url: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  
+  useEffect(() => {
+    signedUrl(url).then(setSrc);
+  }, [url]);
+  
+  if (!src) return null;
+  
+  return (
+    <img 
+      src={src} 
+      alt="Banner" 
+      className="w-full h-full object-cover"
+    />
   );
 }

@@ -3,14 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 export type Profile = {
   id: string;
   username: string;
-  display_name: string;
-  bio: string;
+  display_name: string | null;
+  bio: string | null;
   avatar_url: string | null;
-  theme?: string;
-  chat_bubble_text?: string;
-  chat_bubble_enabled?: boolean;
-  last_seen?: string;
-  is_online?: boolean;
+  banner_url: string | null;
+  chat_bubble_text: string | null;
+  chat_bubble_enabled: boolean;
+  last_seen: string | null;
+  is_online: boolean;
 };
 
 export type Story = {
@@ -49,7 +49,7 @@ export type PostRow = {
 };
 
 export const POST_SELECT =
-  "id,user_id,content,media_url,created_at,profiles(id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online)";
+  "id,user_id,content,media_url,created_at,profiles(id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online)";
 
 export async function currentUserId(): Promise<string> {
   const { data } = await supabase.auth.getUser();
