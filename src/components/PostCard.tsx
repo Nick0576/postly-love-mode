@@ -55,15 +55,14 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
       <p className="mt-3 whitespace-pre-wrap break-words text-[0.95rem]">{post.content}</p>
       <Media path={post.media_url} />
       <div className="mt-3 flex items-center gap-4">
-        {onToggleLike && (
-          <button
-            onClick={onToggleLike}
-            className={`inline-flex items-center gap-2 text-sm ${hasLiked ? "text-red-500" : "text-muted-foreground"} hover:text-red-500 transition-colors`}
-          >
-            <Heart className={`h-4 w-4 ${hasLiked ? "fill-current" : ""}`} />
-            {likeCount !== undefined && likeCount}
-          </button>
-        )}
+        <button
+          onClick={onToggleLike}
+          className={`inline-flex items-center gap-2 text-sm ${hasLiked ? "text-red-500" : "text-muted-foreground"} hover:text-red-500 transition-colors`}
+          disabled={!onToggleLike}
+        >
+          <Heart className={`h-4 w-4 ${hasLiked ? "fill-current" : ""}`} />
+          {likeCount !== undefined && likeCount}
+        </button>
         <Link
           to="/post/$postId"
           params={{ postId: post.id }}
