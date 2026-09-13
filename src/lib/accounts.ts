@@ -59,7 +59,7 @@ export async function addAccount(email: string, password: string): Promise<Store
     refresh_token: session.refresh_token,
     display_name: profile?.display_name || "",
     username: profile?.username || "",
-    avatar_url: profile?.avatar_url,
+    avatar_url: profile?.avatar_url ?? null,
   };
 
   const accounts = getStoredAccounts();
