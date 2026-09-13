@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mic, Video, Send, X, Edit2, ImagePlus, Smile } from "lucide-react";
+import { Mic, Video, Send, X, Edit2, ImagePlus, Smile, FileImage } from "lucide-react";
+import { GifPicker } from "@/components/GifPicker";
 
 const STICKERS = ["😀","😂","🥰","😍","😎","🤔","😭","😡","👍","👎","🙏","👏","🔥","💯","🎉","✨","❤️","💔","💕","🌹","🐱","🐶","🍕","☕","🌙","⭐","🎵","⚽","🎮","🚀","🌈","💎"];
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +35,7 @@ function Chat() {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [showStickers, setShowStickers] = useState(false);
+  const [showGifs, setShowGifs] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
