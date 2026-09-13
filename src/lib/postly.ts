@@ -9,6 +9,8 @@ export type Profile = {
   theme?: string;
   chat_bubble_text?: string;
   chat_bubble_enabled?: boolean;
+  last_seen?: string;
+  is_online?: boolean;
 };
 
 export type PostRow = {
@@ -21,7 +23,7 @@ export type PostRow = {
 };
 
 export const POST_SELECT =
-  "id,user_id,content,media_url,created_at,profiles(id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled)";
+  "id,user_id,content,media_url,created_at,profiles(id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online)";
 
 export async function currentUserId(): Promise<string> {
   const { data } = await supabase.auth.getUser();
@@ -67,6 +69,27 @@ export function getChatBubbleFromStorage(): { text: string; enabled: boolean } |
 export function saveChatBubbleToStorage(text: string, enabled: boolean): void {
   if (typeof localStorage === "undefined") return;
   localStorage.setItem(CHAT_BUBBLE_KEY, JSON.stringify({ text, enabled }));
+}
+
+// Online status utilities
+export async function setOnlineStatus(online: boolean): Promise<void> {
+  const uid = await currentUserId();
+  await supabase
+    .from("profiles")
+    .update({ 
+      is_online: online,
+      last_seen: online ? null : new Date().toISOString()
+    })
+    .eq("id", uid);
+}
+
+export function isUserOnline(profile: Profile): boolean {
+  if (!profile.is_online) return false;
+  if (!profile.last_seen) return true;
+  // Consider user online if they were seen in the last 5 minutes
+  const lastSeen = new Date(profile.last_seen).getTime();
+  const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+  return lastSeen > fiveMinutesAgo;
 }
 
 export const LOVE_QUESTIONS = [

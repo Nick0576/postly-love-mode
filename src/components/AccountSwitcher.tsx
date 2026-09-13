@@ -30,7 +30,7 @@ import {
 } from "@/lib/accounts";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
-import { currentUserId } from "@/lib/postly";
+import { currentUserId, setOnlineStatus } from "@/lib/postly";
 
 export function AccountSwitcher() {
   const navigate = useNavigate();
@@ -62,6 +62,14 @@ export function AccountSwitcher() {
       }
     }
     loadChatBubble();
+
+    // Set online status
+    setOnlineStatus(true);
+
+    // Set offline on unmount
+    return () => {
+      setOnlineStatus(false);
+    };
   }, []);
 
   const handleSwitchAccount = async (accountId: string) => {

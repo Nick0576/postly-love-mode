@@ -6,7 +6,7 @@ import { PostCard } from "@/components/PostCard";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { POST_SELECT, currentUserId, type PostRow, type Profile } from "@/lib/postly";
+import { POST_SELECT, currentUserId, type PostRow, type Profile, isUserOnline } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 import { Input } from "@/components/ui/input";
 
@@ -38,7 +38,7 @@ function SearchPage() {
       const me = await currentUserId();
       const { data } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url")
+        .select("id,username,display_name,bio,avatar_url,last_seen,is_online")
         .neq("id", me)
         .order("username", { ascending: true })
         .limit(50);
@@ -54,7 +54,7 @@ function SearchPage() {
       const [users, posts] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id,username,display_name,bio,avatar_url")
+          .select("id,username,display_name,bio,avatar_url,last_seen,is_online")
           .neq("id", me)
           .or(`username.ilike.%${term}%,display_name.ilike.%${term}%`)
           .limit(10),
@@ -158,7 +158,12 @@ function UserCard({ user }: { user: Profile }) {
         params={{ username: user.username }}
         className="flex items-center gap-3 flex-1"
       >
-        <Avatar url={user.avatar_url} name={user.display_name || user.username} size={48} />
+        <div className="relative">
+          <Avatar url={user.avatar_url} name={user.display_name || user.username} size={48} />
+          {isUserOnline(user) && (
+            <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-background" />
+          )}
+        </div>
         <div className="min-w-0">
           <p className="truncate font-semibold">{user.display_name || user.username}</p>
           <p className="truncate text-xs text-muted-foreground">@{user.username}</p>

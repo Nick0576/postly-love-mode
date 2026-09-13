@@ -7,7 +7,7 @@ import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { POST_SELECT, currentUserId, type PostRow, type Profile } from "@/lib/postly";
+import { POST_SELECT, currentUserId, type PostRow, type Profile, isUserOnline } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/u/$username")({
@@ -37,7 +37,7 @@ function ProfilePage() {
       const me = await currentUserId();
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled")
+        .select("id,username,display_name,bio,avatar_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online")
         .eq("username", username)
         .maybeSingle();
       if (!profile) return null;
@@ -108,6 +108,9 @@ function ProfilePage() {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Avatar url={data.profile.avatar_url} name={data.profile.display_name} size={56} />
+                {isUserOnline(data.profile) && (
+                  <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-background" />
+                )}
                 {data.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
                   <div 
                     className="absolute -top-10 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-2xl shadow-md whitespace-nowrap cursor-pointer"
@@ -124,6 +127,7 @@ function ProfilePage() {
                 </h2>
                 <p className="text-xs text-muted-foreground">
                   @{data.profile.username} · {data.followers} followers
+                  {isUserOnline(data.profile) && " · Online"}
                 </p>
               </div>
             </div>
