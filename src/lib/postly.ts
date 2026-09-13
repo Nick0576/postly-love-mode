@@ -24,6 +24,21 @@ export type Story = {
   profiles: Profile | null;
 };
 
+export type GroupChat = {
+  id: string;
+  name: string;
+  created_by: string;
+  created_at: string;
+};
+
+export type GroupMember = {
+  id: string;
+  group_id: string;
+  user_id: string;
+  joined_at: string;
+  profiles: Profile | null;
+};
+
 export type PostRow = {
   id: string;
   user_id: string;
@@ -123,6 +138,44 @@ export async function deleteStory(storyId: string): Promise<void> {
 
 export function isStoryExpired(story: Story): boolean {
   return new Date(story.expires_at) < new Date();
+}
+
+// Group chat utilities
+export async function createGroupChat(name: string): Promise<string> {
+  const uid = await currentUserId();
+  const { data, error } = await supabase
+    .from("group_chats")
+    .insert({ name, created_by: uid })
+    .select("id")
+    .single();
+  if (error) throw error;
+  // Add creator as first member
+  await supabase.from("group_members").insert({ group_id: data.id, user_id: uid });
+  return data.id;
+}
+
+export async function addGroupMember(groupId: string, userId: string): Promise<void> {
+  const { error } = await supabase.from("group_members").insert({ group_id: groupId, user_id: userId });
+  if (error) throw error;
+}
+
+export async function getGroupMembers(groupId: string): Promise<GroupMember[]> {
+  const { data, error } = await supabase
+    .from("group_members")
+    .select("*,profiles(*)")
+    .eq("group_id", groupId);
+  if (error) throw error;
+  return data as GroupMember[];
+}
+
+export async function getGroupChat(groupId: string): Promise<GroupChat | null> {
+  const { data, error } = await supabase
+    .from("group_chats")
+    .select("*")
+    .eq("id", groupId)
+    .single();
+  if (error) throw error;
+  return data as GroupChat;
 }
 
 export const LOVE_QUESTIONS = [
