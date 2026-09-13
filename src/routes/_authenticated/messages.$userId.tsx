@@ -4,9 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mic, Video, Send, X } from "lucide-react";
+import { Mic, Video, Send, X, Edit2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, uploadMedia, signedUrl, type Profile } from "@/lib/postly";
+import { currentUserId, uploadMedia, signedUrl, type Profile, editMessage } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 
 type Msg = { id: string; sender_id: string; content: string; media_url: string | null; media_type: string | null; created_at: string };
@@ -29,6 +29,8 @@ function Chat() {
   const [text, setText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<number | null>(null);
@@ -144,6 +146,28 @@ function Chat() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["chat", userId] }),
   });
 
+  const editMutation = useMutation({
+    mutationFn: async ({ messageId, content }: { messageId: string; content: string }) => {
+      await editMessage(messageId, content);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["chat", userId] });
+      setEditingMessageId(null);
+      setEditText("");
+    },
+  });
+
+  function startEdit(messageId: string, content: string) {
+    setEditingMessageId(messageId);
+    setEditText(content);
+  }
+
+  function saveEdit() {
+    if (editingMessageId && editText.trim()) {
+      editMutation.mutate({ messageId: editingMessageId, content: editText.trim() });
+    }
+  }
+
   const deleteChat = useMutation({
     mutationFn: async () => {
       if (!data) return;
@@ -196,21 +220,44 @@ function Chat() {
                 : "bg-muted text-foreground"
             }`}
           >
-            {m.media_type === "audio" && m.media_url && (
-              <VoiceMessage mediaUrl={m.media_url} />
+            {editingMessageId === m.id ? (
+              <div className="flex gap-2">
+                <Input
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  className="flex-1"
+                  onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                />
+                <Button onClick={saveEdit} size="sm">Save</Button>
+                <Button onClick={() => { setEditingMessageId(null); setEditText(""); }} variant="outline" size="sm">Cancel</Button>
+              </div>
+            ) : (
+              <>
+                {m.media_type === "audio" && m.media_url && (
+                  <VoiceMessage mediaUrl={m.media_url} />
+                )}
+                {m.content && !m.media_type && m.content}
+              </>
             )}
-            {m.content && !m.media_type && m.content}
-            {m.sender_id === data.me && (
-              <button
-                onClick={() => {
-                  if (confirm("Delete this message?")) {
-                    deleteMessage.mutate(m.id);
-                  }
-                }}
-                className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-red-500 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                ×
-              </button>
+            {m.sender_id === data.me && editingMessageId !== m.id && (
+              <div className="absolute -top-2 -right-2 flex gap-1">
+                <button
+                  onClick={() => startEdit(m.id, m.content || "")}
+                  className="h-5 w-5 rounded-full bg-blue-500 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Edit2 className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Delete this message?")) {
+                      deleteMessage.mutate(m.id);
+                    }
+                  }}
+                  className="h-5 w-5 rounded-full bg-red-500 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  ×
+                </button>
+              </div>
             )}
           </div>
         ))}

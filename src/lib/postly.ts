@@ -178,6 +178,30 @@ export async function getGroupChat(groupId: string): Promise<GroupChat | null> {
   return data as GroupChat;
 }
 
+export async function renameGroupChat(groupId: string, name: string): Promise<void> {
+  const { error } = await supabase
+    .from("group_chats")
+    .update({ name })
+    .eq("id", groupId);
+  if (error) throw error;
+}
+
+export async function deleteGroupChat(groupId: string): Promise<void> {
+  const { error } = await supabase
+    .from("group_chats")
+    .delete()
+    .eq("id", groupId);
+  if (error) throw error;
+}
+
+export async function editMessage(messageId: string, content: string): Promise<void> {
+  const { error } = await supabase
+    .from("messages")
+    .update({ content })
+    .eq("id", messageId);
+  if (error) throw error;
+}
+
 export const LOVE_QUESTIONS = [
   "Do you believe in true love?",
   "Do you believe love can last forever?",

@@ -4,9 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mic, Video, Send, X, Users } from "lucide-react";
+import { Mic, Video, Send, X, Users, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, uploadMedia, signedUrl, type Profile, type GroupChat, getGroupMembers, addGroupMember } from "@/lib/postly";
+import { currentUserId, uploadMedia, signedUrl, type Profile, type GroupChat, getGroupMembers, addGroupMember, renameGroupChat, deleteGroupChat, editMessage } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 
 type Msg = { id: string; sender_id: string; content: string; media_url: string | null; media_type: string | null; created_at: string; profiles: Profile | null };
@@ -31,6 +31,11 @@ function GroupChat() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [showMembers, setShowMembers] = useState(false);
   const [newMemberUsername, setNewMemberUsername] = useState("");
+  const [showMenu, setShowMenu] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<number | null>(null);
@@ -180,6 +185,29 @@ function GroupChat() {
     }
   }
 
+  function handleRename() {
+    if (newGroupName.trim()) {
+      renameMutation.mutate(newGroupName.trim());
+    }
+  }
+
+  function handleDeleteGroup() {
+    if (confirm("Are you sure you want to delete this group? This cannot be undone.")) {
+      deleteGroupMutation.mutate();
+    }
+  }
+
+  function startEdit(messageId: string, content: string) {
+    setEditingMessageId(messageId);
+    setEditText(content);
+  }
+
+  function saveEdit() {
+    if (editingMessageId && editText.trim()) {
+      editMutation.mutate({ messageId: editingMessageId, content: editText.trim() });
+    }
+  }
+
   const deleteMessage = useMutation({
     mutationFn: async (messageId: string) => {
       if (!data) return;
@@ -189,15 +217,74 @@ function GroupChat() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["group-chat", groupId] }),
   });
 
+  const renameMutation = useMutation({
+    mutationFn: async (name: string) => {
+      await renameGroupChat(groupId, name);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["group-chat", groupId] });
+      setIsRenaming(false);
+    },
+  });
+
+  const deleteGroupMutation = useMutation({
+    mutationFn: async () => {
+      await deleteGroupChat(groupId);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["chats"] });
+      navigate({ to: "/messages" });
+    },
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ messageId, content }: { messageId: string; content: string }) => {
+      await editMessage(messageId, content);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["group-chat", groupId] });
+      setEditingMessageId(null);
+      setEditText("");
+    },
+  });
+
   return (
     <AppShell 
       title={data?.group?.name || "Group Chat"}
       headerAction={
-        <Button variant="ghost" size="icon" onClick={() => setShowMembers(!showMembers)}>
-          <Users className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => setShowMembers(!showMembers)}>
+            <Users className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setShowMenu(!showMenu)}>
+            <MoreVertical className="h-5 w-5" />
+          </Button>
+        </div>
       }
     >
+      {showMenu && data?.group && (
+        <div className="mb-4 p-3 rounded-lg border space-y-2">
+          {isRenaming ? (
+            <div className="flex gap-2">
+              <Input
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                placeholder="New group name"
+                className="flex-1"
+              />
+              <Button onClick={handleRename} size="sm">Save</Button>
+              <Button onClick={() => setIsRenaming(false)} variant="outline" size="sm">Cancel</Button>
+            </div>
+          ) : (
+            <Button onClick={() => { setIsRenaming(true); setNewGroupName(data.group.name); }} variant="outline" size="sm" className="w-full">
+              <Edit2 className="h-4 w-4 mr-2" /> Rename Group
+            </Button>
+          )}
+          <Button onClick={handleDeleteGroup} variant="destructive" size="sm" className="w-full">
+            <Trash2 className="h-4 w-4 mr-2" /> Delete Group
+          </Button>
+        </div>
+      )}
       {showMembers && data?.members && (
         <div className="mb-4 p-3 rounded-lg border space-y-2">
           <h4 className="font-semibold text-sm">Members ({data.members.length}/10)</h4>
@@ -234,21 +321,44 @@ function GroupChat() {
             {m.sender_id !== data.me && (
               <p className="text-xs font-semibold mb-1">{m.profiles?.display_name || m.profiles?.username}</p>
             )}
-            {m.media_type === "audio" && m.media_url && (
-              <VoiceMessage mediaUrl={m.media_url} />
+            {editingMessageId === m.id ? (
+              <div className="flex gap-2">
+                <Input
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  className="flex-1"
+                  onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                />
+                <Button onClick={saveEdit} size="sm">Save</Button>
+                <Button onClick={() => { setEditingMessageId(null); setEditText(""); }} variant="outline" size="sm">Cancel</Button>
+              </div>
+            ) : (
+              <>
+                {m.media_type === "audio" && m.media_url && (
+                  <VoiceMessage mediaUrl={m.media_url} />
+                )}
+                {m.content && !m.media_type && m.content}
+              </>
             )}
-            {m.content && !m.media_type && m.content}
-            {m.sender_id === data.me && (
-              <button
-                onClick={() => {
-                  if (confirm("Delete this message?")) {
-                    deleteMessage.mutate(m.id);
-                  }
-                }}
-                className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-red-500 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                ×
-              </button>
+            {m.sender_id === data.me && editingMessageId !== m.id && (
+              <div className="absolute -top-2 -right-2 flex gap-1">
+                <button
+                  onClick={() => startEdit(m.id, m.content || "")}
+                  className="h-5 w-5 rounded-full bg-blue-500 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Edit2 className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Delete this message?")) {
+                      deleteMessage.mutate(m.id);
+                    }
+                  }}
+                  className="h-5 w-5 rounded-full bg-red-500 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  ×
+                </button>
+              </div>
             )}
           </div>
         ))}
