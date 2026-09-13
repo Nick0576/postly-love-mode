@@ -203,7 +203,7 @@ function ProfilePage() {
         </>
       )}
       
-      {showBubbleOverlay && data.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
+      {showBubbleOverlay && data?.profile.chat_bubble_enabled && data.profile.chat_bubble_text && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
           onClick={() => setShowBubbleOverlay(false)}

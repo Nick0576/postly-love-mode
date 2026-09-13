@@ -373,3 +373,15 @@ function VoiceMessage({ mediaUrl }: { mediaUrl: string }) {
     </audio>
   );
 }
+
+function ChatMedia({ mediaUrl, kind }: { mediaUrl: string; kind: "image" | "video" }) {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    void signedUrl(mediaUrl).then(setUrl);
+  }, [mediaUrl]);
+
+  if (!url) return <div className="text-xs">Loading…</div>;
+  if (kind === "video") return <video controls className="max-h-64 rounded-lg" src={url} />;
+  return <img src={url} alt="Shared media" className="max-h-64 rounded-lg" />;
+}
