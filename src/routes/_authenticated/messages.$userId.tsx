@@ -270,7 +270,33 @@ function Chat() {
         ))}
         {data && !data.msgs.length && <p className="text-sm text-muted-foreground">Say hello.</p>}
       </div>
+      {showStickers && (
+        <div className="fixed inset-x-0 bottom-32 mx-auto grid max-w-xl grid-cols-8 gap-1 rounded-2xl border bg-background p-3 shadow-lg">
+          {STICKERS.map((s) => (
+            <button key={s} className="text-2xl" onClick={() => void sendSticker(s)}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="fixed inset-x-0 bottom-16 mx-auto flex max-w-xl gap-2 bg-background px-4 py-3">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*,video/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) void sendFile(f);
+          }}
+        />
+        <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={isRecording || uploading}>
+          <ImagePlus className="h-4 w-4" />
+        </Button>
+        <Button variant="outline" onClick={() => setShowStickers((v) => !v)} disabled={isRecording}>
+          <Smile className="h-4 w-4" />
+        </Button>
         {isRecording ? (
           <Button variant="destructive" onClick={stopRecording} className="flex items-center gap-2">
             <X className="h-4 w-4" />
