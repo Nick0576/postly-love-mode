@@ -1,9 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Heart } from "lucide-react";
 import { Avatar, Media } from "@/components/Media";
 import { timeAgo, type PostRow } from "@/lib/postly";
 
-export function PostCard({ post, onDelete }: { post: PostRow; onDelete?: (() => void) | undefined }) {
+export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike }: { 
+  post: PostRow; 
+  onDelete?: (() => void) | undefined;
+  hasLiked?: boolean;
+  likeCount?: number;
+  onToggleLike?: () => void;
+}) {
   const author = post.profiles;
   return (
     <article className="rounded-2xl border bg-card p-4 shadow-soft">
@@ -29,13 +35,24 @@ export function PostCard({ post, onDelete }: { post: PostRow; onDelete?: (() => 
       </div>
       <p className="mt-3 whitespace-pre-wrap break-words text-[0.95rem]">{post.content}</p>
       <Media path={post.media_url} />
-      <Link
-        to="/post/$postId"
-        params={{ postId: post.id }}
-        className="mt-3 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
-      >
-        <MessageCircle className="h-4 w-4" /> Comments
-      </Link>
+      <div className="mt-3 flex items-center gap-4">
+        {onToggleLike && (
+          <button
+            onClick={onToggleLike}
+            className={`inline-flex items-center gap-2 text-sm ${hasLiked ? "text-red-500" : "text-muted-foreground"} hover:text-red-500 transition-colors`}
+          >
+            <Heart className={`h-4 w-4 ${hasLiked ? "fill-current" : ""}`} />
+            {likeCount ?? 0}
+          </button>
+        )}
+        <Link
+          to="/post/$postId"
+          params={{ postId: post.id }}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
+        >
+          <MessageCircle className="h-4 w-4" /> Comments
+        </Link>
+      </div>
     </article>
   );
 }

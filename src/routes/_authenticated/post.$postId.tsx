@@ -97,6 +97,69 @@ function PostPage() {
     },
   });
 
+  const deleteComment = useMutation({
+    mutationFn: async (commentId: string) => {
+      const uid = await currentUserId();
+      const { error } = await supabase.from("comments").delete().eq("id", commentId).eq("user_id", uid);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Comment deleted");
+      void qc.invalidateQueries({ queryKey: ["comments", postId] });
+    },
+  });
+
+  const { data: hasLiked } = useQuery({
+    queryKey: ["has-liked", postId, me],
+    queryFn: async () => {
+      if (!me) return false;
+      const { data, error } = await supabase
+        .from("likes")
+        .select("id")
+        .eq("post_id", postId)
+        .eq("user_id", me)
+        .maybeSingle();
+      if (error) throw error;
+      return !!data;
+    },
+    enabled: !!me,
+  });
+
+  const { data: likeCount } = useQuery({
+    queryKey: ["like-count", postId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("likes")
+        .select("*", { count: "exact", head: true })
+        .eq("post_id", postId);
+      if (error) throw error;
+      return data?.count ?? 0;
+    },
+  });
+
+  const toggleLike = useMutation({
+    mutationFn: async () => {
+      const uid = await currentUserId();
+      if (hasLiked) {
+        const { error } = await supabase
+          .from("likes")
+          .delete()
+          .eq("post_id", postId)
+          .eq("user_id", uid);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("likes")
+          .insert({ post_id: postId, user_id: uid });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["has-liked", postId, me] });
+      void qc.invalidateQueries({ queryKey: ["like-count", postId] });
+    },
+  });
+
   const list = comments ?? [];
   const roots = list.filter((c) => !c.parent_id);
   const replies = (id: string) => list.filter((c) => c.parent_id === id);
@@ -108,6 +171,16 @@ function PostPage() {
         <p className="text-xs text-muted-foreground">
           @{c.profiles?.username} · {timeAgo(c.created_at)}
         </p>
+        {c.user_id === me && (
+          <button
+            onClick={() => {
+              if (confirm("Delete this comment?")) deleteComment.mutate(c.id);
+            }}
+            className="ml-auto text-xs text-destructive hover:underline"
+          >
+            Delete
+          </button>
+        )}
       </div>
       <p className="mt-2 whitespace-pre-wrap break-words text-sm">{c.content}</p>
       <button className="mt-2 text-xs text-primary" onClick={() => setReplyTo(c.id)}>
@@ -129,6 +202,9 @@ function PostPage() {
                 }
               : undefined
           }
+          hasLiked={hasLiked}
+          likeCount={likeCount}
+          onToggleLike={() => toggleLike.mutate()}
         />
       )}
       <div className="mt-4">

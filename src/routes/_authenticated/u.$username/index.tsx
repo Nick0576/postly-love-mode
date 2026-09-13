@@ -96,6 +96,26 @@ function ProfilePage() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
   });
 
+  const toggleLike = useMutation({
+    mutationFn: async ({ postId, hasLiked }: { postId: string; hasLiked: boolean }) => {
+      const uid = await currentUserId();
+      if (hasLiked) {
+        const { error } = await supabase
+          .from("likes")
+          .delete()
+          .eq("post_id", postId)
+          .eq("user_id", uid);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("likes")
+          .insert({ post_id: postId, user_id: uid });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
+  });
+
   useEffect(() => {
     if (data && data.profile && data.me !== data.profile.id) {
       void recordProfileView(data.profile.id);
@@ -247,6 +267,7 @@ function ProfilePage() {
                       }
                     : undefined
                 }
+                onToggleLike={() => toggleLike.mutate({ postId: p.id, hasLiked: false })}
               />
             ))}
             {!data.posts.length && <p className="text-sm text-muted-foreground">No posts yet.</p>}
