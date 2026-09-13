@@ -25,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/messages/group/$groupId")(
 
 function GroupChat() {
   const { groupId } = Route.useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
