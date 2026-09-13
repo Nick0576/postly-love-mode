@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { type Profile, isUserOnline } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
@@ -44,7 +45,13 @@ function FollowingList() {
   });
 
   return (
-    <AppShell title="Following">
+    <AppShell title="Following" headerAction={
+      <Button variant="ghost" size="icon" asChild>
+        <Link to="/u/$username" params={{ username }}>
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+      </Button>
+    }>
       <div className="space-y-3">
         {following?.map((user) => (
           <Link
