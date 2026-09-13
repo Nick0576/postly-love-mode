@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { PostCard } from "@/components/PostCard";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { POST_SELECT, currentUserId, type PostRow, type Story, isStoryExpired } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
@@ -150,6 +151,13 @@ function Feed() {
         <div ref={sentinel} className="h-8" />
         {isFetchingNextPage && <p className="text-center text-sm text-muted-foreground">Loading…</p>}
       </div>
+      
+      {/* Floating Action Button for Stories */}
+      <Link to="/story" className="fixed bottom-24 right-4">
+        <Button size="lg" className="rounded-full w-14 h-14 shadow-lg">
+          <Plus className="h-6 w-6" />
+        </Button>
+      </Link>
     </AppShell>
   );
 }
