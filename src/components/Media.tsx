@@ -19,20 +19,17 @@ export function Media({ path, className }: { path: string | null; className?: st
   );
 }
 
-export function Avatar({
-  url,
-  name,
-  size = 40,
-  className: _className,
-}: {
-  url?: string | null;
-  name?: string | null;
+type AvatarProps = {
+  url?: string | null | undefined;
+  name?: string | null | undefined;
   size?: number;
   className?: string;
-}) {
+};
+
+export function Avatar({ url, name, size = 40 }: AvatarProps) {
   const { data } = useQuery({
-    queryKey: ["media", url],
-    queryFn: () => signedUrl(url),
+    queryKey: ["media", url ?? null],
+    queryFn: () => signedUrl(url ?? null),
     enabled: !!url,
     staleTime: 50 * 60 * 1000,
   });
@@ -40,7 +37,7 @@ export function Avatar({
     return (
       <img
         src={data}
-        alt={name}
+        alt={name ?? ""}
         style={{ width: size, height: size }}
         className="shrink-0 rounded-full object-cover"
       />
