@@ -127,6 +127,19 @@ function Chat() {
     void qc.invalidateQueries({ queryKey: ["chat", userId] });
   }
 
+  async function sendGif(url: string) {
+    if (!data) return;
+    setShowGifs(false);
+    await supabase.from("messages").insert({
+      sender_id: data.me,
+      recipient_id: userId,
+      content: "",
+      media_url: url,
+      media_type: "gif",
+    });
+    void qc.invalidateQueries({ queryKey: ["chat", userId] });
+  }
+
   function startRecording() {
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => {
@@ -279,6 +292,9 @@ function Chat() {
                 {m.media_type === "video" && m.media_url && (
                   <ChatMedia mediaUrl={m.media_url} kind="video" />
                 )}
+                {m.media_type === "gif" && m.media_url && (
+                  <img src={m.media_url} alt="GIF" className="max-h-64 rounded-lg" />
+                )}
                 {m.media_type === "sticker" && <span className="text-4xl">{m.content}</span>}
                 {m.content && !m.media_type && m.content}
               </>
@@ -307,6 +323,9 @@ function Chat() {
         ))}
         {data && !data.msgs.length && <p className="text-sm text-muted-foreground">Say hello.</p>}
       </div>
+      {showGifs && data && (
+        <GifPicker customerId={data.me} onPick={(g) => void sendGif(g.url)} />
+      )}
       {showStickers && (
         <div className="fixed inset-x-0 bottom-32 mx-auto grid max-w-xl grid-cols-8 gap-1 rounded-2xl border bg-background p-3 shadow-lg">
           {STICKERS.map((s) => (
@@ -331,7 +350,10 @@ function Chat() {
         <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={isRecording || uploading}>
           <ImagePlus className="h-4 w-4" />
         </Button>
-        <Button variant="outline" onClick={() => setShowStickers((v) => !v)} disabled={isRecording}>
+        <Button variant="outline" onClick={() => { setShowGifs((v) => !v); setShowStickers(false); }} disabled={isRecording}>
+          <FileImage className="h-4 w-4" />
+        </Button>
+        <Button variant="outline" onClick={() => { setShowStickers((v) => !v); setShowGifs(false); }} disabled={isRecording}>
           <Smile className="h-4 w-4" />
         </Button>
         {isRecording ? (
