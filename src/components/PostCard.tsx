@@ -70,7 +70,12 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {onToggleLike && (
-            <DropdownMenuItem onClick={onToggleLike}>
+            <DropdownMenuItem onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleLike();
+              setMenuOpen(false);
+            }}>
               <Heart className={`h-4 w-4 mr-2 ${hasLiked ? "fill-current text-red-500" : ""}`} />
               {hasLiked ? "Unlike" : "Like"}
             </DropdownMenuItem>
@@ -82,19 +87,34 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
             </Link>
           </DropdownMenuItem>
           {onTogglePin && (
-            <DropdownMenuItem onClick={onTogglePin}>
+            <DropdownMenuItem onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onTogglePin();
+              setMenuOpen(false);
+            }}>
               <Pin className={`h-4 w-4 mr-2 ${isPinned ? "fill-current" : ""}`} />
               {isPinned ? "Unpin" : "Pin"}
             </DropdownMenuItem>
           )}
           {onEdit && (
-            <DropdownMenuItem onClick={() => void onEdit()}>
+            <DropdownMenuItem onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              void onEdit();
+              setMenuOpen(false);
+            }}>
               <Pencil className="h-4 w-4 mr-2" />
               Edit
             </DropdownMenuItem>
           )}
           {onDelete && (
-            <DropdownMenuItem onClick={onDelete} className="text-destructive">
+            <DropdownMenuItem onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onDelete();
+              setMenuOpen(false);
+            }} className="text-destructive">
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
             </DropdownMenuItem>
