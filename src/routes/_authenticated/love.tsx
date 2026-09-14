@@ -238,24 +238,6 @@ function Love() {
           </div>
         </div>
       )}
-
-      {!!data?.matches.length && (
-        <div className="mt-6 space-y-2">
-          <h2 className="font-semibold">Your matches</h2>
-          {data.matches.map((m) => (
-            <Link
-              key={m.profile.id}
-              to="/u/$username"
-              params={{ username: m.profile.username }}
-              className="flex items-center gap-3 rounded-xl border p-3"
-            >
-              <Avatar url={m.profile.avatar_url} name={m.profile.display_name || m.profile.username} size={36} />
-              <span className="flex-1 truncate">{m.profile.display_name || m.profile.username}</span>
-              <span className="font-bold text-primary">{m.score}%</span>
-            </Link>
-          ))}
-        </div>
-      )}
     </AppShell>
   );
 }
