@@ -173,7 +173,7 @@ function Love() {
           <p className="text-sm text-muted-foreground">
             Answer 20 quick questions. We only compare you with people you follow who follow you back.
           </p>
-          <Button className="mt-4" onClick={() => void startLoveMode()}>
+          <Button className="mt-4" onClick={startLoveMode}>
             Start
           </Button>
         </div>
