@@ -34,8 +34,8 @@ import { currentUserId, setOnlineStatus } from "@/lib/postly";
 
 export function AccountSwitcher() {
   const navigate = useNavigate();
-  const [accounts, setAccounts] = useState<StoredAccount[]>(getStoredAccounts());
-  const [activeAccount, setActiveAccount] = useState<StoredAccount | null>(getActiveAccount());
+  const [accounts, setAccounts] = useState<StoredAccount[]>([]);
+  const [activeAccount, setActiveAccount] = useState<StoredAccount | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
