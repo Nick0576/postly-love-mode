@@ -31,6 +31,24 @@ function Love() {
     applyTheme(getTheme());
   }, []);
 
+  // Real-time subscription for love_answers changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('love_answers_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'love_answers'
+      }, () => {
+        void qc.invalidateQueries({ queryKey: ["love"] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   const { data } = useQuery({
     queryKey: ["love"],
     queryFn: async () => {
