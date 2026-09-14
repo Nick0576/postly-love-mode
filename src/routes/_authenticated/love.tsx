@@ -91,6 +91,15 @@ function Love() {
   const mutualStarted = data?.matches.some(m => m.started_at !== null);
   const showProfilePictures = currentUserStarted && mutualStarted && data?.matches.length > 0;
   const firstMatch = data?.matches.find(m => m.started_at !== null);
+  
+  console.log('Love Mode debug:', {
+    currentUserStarted,
+    mutualStarted,
+    showProfilePictures,
+    mine: data?.mine,
+    matches: data?.matches,
+    firstMatch
+  });
 
   async function startLoveMode() {
     if (!data) return;
