@@ -36,7 +36,7 @@ function Love() {
     queryFn: async () => {
       const me = await currentUserId();
       const [{ data: rows }, { data: iFollow }, { data: followMe }] = await Promise.all([
-        supabase.from("love_answers").select("user_id,answers"),
+        supabase.from("love_answers").select("user_id,answers,started_at"),
         supabase.from("follows").select("following_id").eq("follower_id", me),
         supabase.from("follows").select("follower_id").eq("following_id", me),
       ]);
@@ -44,7 +44,7 @@ function Love() {
       const mutuals = new Set((iFollow ?? []).map((r) => r.following_id).filter((id) => back.has(id)));
       const mine = rows?.find((r) => r.user_id === me);
       const others = (rows ?? []).filter((r) => r.user_id !== me && mutuals.has(r.user_id));
-      let matches: { profile: Profile; score: number }[] = [];
+      let matches: { profile: Profile; score: number; started_at: string | null }[] = [];
       if (mine && others.length) {
         const { data: people } = await supabase
           .from("profiles")
@@ -52,9 +52,13 @@ function Love() {
           .in("id", others.map((o) => o.user_id));
         matches = (people ?? [])
           .map((p) => {
-            const theirs = others.find((o) => o.user_id === p.id)!.answers as number[];
-            const same = (mine.answers as number[]).filter((a, i) => a === theirs[i]).length;
-            return { profile: p as Profile, score: Math.round((same / LOVE_QUESTIONS.length) * 100) };
+            const theirs = others.find((o) => o.user_id === p.id)!;
+            const same = (mine.answers as number[]).filter((a, i) => a === (theirs.answers as number[])[i]).length;
+            return { 
+              profile: p as Profile, 
+              score: Math.round((same / LOVE_QUESTIONS.length) * 100),
+              started_at: theirs.started_at
+            };
           })
           .sort((a, b) => b.score - a.score);
       }
@@ -65,6 +69,31 @@ function Love() {
   const locked = !!data && data.mutuals === 0;
   const answers = draft ?? data?.mine ?? null;
   const started = answers !== null && !locked;
+
+  async function startLoveMode() {
+    if (!data) return;
+    setDraft(Array(LOVE_QUESTIONS.length).fill(-1));
+    
+    // Record that user started Love Mode
+    await supabase.from("love_answers").upsert({ 
+      user_id: data.me, 
+      answers: Array(LOVE_QUESTIONS.length).fill(-1),
+      started_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    
+    // Notify mutual followers that you started Love Mode
+    if (data.matches.length > 0) {
+      for (const match of data.matches) {
+        await supabase.from("messages").insert({
+          sender_id: data.me,
+          recipient_id: match.profile.id,
+          content: "I just started Love Mode! 💕",
+          media_type: "love_started"
+        });
+      }
+    }
+  }
 
   async function saveAll(list: number[]) {
     if (!data) return;
@@ -133,7 +162,7 @@ function Love() {
           <p className="text-sm text-muted-foreground">
             Answer 20 quick questions. We only compare you with people you follow who follow you back.
           </p>
-          <Button className="mt-4" onClick={() => setDraft(Array(LOVE_QUESTIONS.length).fill(-1))}>
+          <Button className="mt-4" onClick={() => void startLoveMode()}>
             Start
           </Button>
         </div>
@@ -198,7 +227,14 @@ function Love() {
               className="flex items-center gap-3 rounded-xl border p-3"
             >
               <Avatar url={m.profile.avatar_url} name={m.profile.display_name || m.profile.username} size={36} />
-              <span className="flex-1 truncate">{m.profile.display_name || m.profile.username}</span>
+              <div className="flex-1">
+                <span className="block truncate">{m.profile.display_name || m.profile.username}</span>
+                {m.started_at ? (
+                  <span className="text-xs text-muted-foreground">Started Love Mode</span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Not started Love Mode yet</span>
+                )}
+              </div>
               <span className="font-bold text-primary">{m.score}%</span>
             </Link>
           ))}
