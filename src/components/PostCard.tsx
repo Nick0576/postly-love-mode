@@ -33,8 +33,9 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
       isLongPress.current = true;
       // Long press triggers pin action if available
       if (onTogglePin) {
+        const action = isPinned ? "unpinned" : "pinned";
         onTogglePin();
-        toast.success(isPinned ? "Post unpinned" : "Your post has been pinned");
+        toast.success(`Your post has been ${action}`);
       } else {
         // If no pin action, show menu
         setMenuOpen(true);
