@@ -92,9 +92,19 @@ function Chat() {
   async function send() {
     const body = text.trim();
     if (!body || !data) return;
-    setText("");
-    await supabase.from("messages").insert({ sender_id: data.me, recipient_id: userId, content: body });
-    void qc.invalidateQueries({ queryKey: ["chat", userId] });
+    try {
+      setText("");
+      const { error } = await supabase.from("messages").insert({ sender_id: data.me, recipient_id: userId, content: body });
+      if (error) {
+        console.error("Failed to send message:", error);
+        setText(body); // Restore text on error
+        return;
+      }
+      void qc.invalidateQueries({ queryKey: ["chat", userId] });
+    } catch (e) {
+      console.error("Error sending message:", e);
+      setText(body); // Restore text on error
+    }
   }
 
   async function sendVoice(audioBlob: Blob) {
