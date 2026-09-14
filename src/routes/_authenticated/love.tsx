@@ -196,7 +196,7 @@ function Love() {
         </div>
       )}
 
-      {started && !hasMutualStarted && (
+      {started && !mutualStarted && (
         <div className="rounded-2xl border p-4 text-center">
           <p className="text-sm text-muted-foreground">
             Waiting for other user to join Love Mode...
