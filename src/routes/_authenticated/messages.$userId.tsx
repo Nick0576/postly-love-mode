@@ -31,6 +31,19 @@ function Chat() {
   const { userId } = Route.useParams();
   const qc = useQueryClient();
   const [text, setText] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResizeTextarea = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    }
+  };
+
+  useEffect(() => {
+    autoResizeTextarea();
+  }, [text]);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -368,8 +381,12 @@ function Chat() {
           </Button>
         )}
         <Textarea
+          ref={textareaRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            autoResizeTextarea();
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
@@ -379,7 +396,7 @@ function Chat() {
           placeholder="Message"
           aria-label="Message"
           disabled={isRecording}
-          className="min-h-[40px] max-h-[120px] resize-none"
+          className="min-h-[40px] max-h-[120px] resize-none overflow-hidden"
           rows={1}
         />
         <Button onClick={() => void send()} disabled={isRecording}>
