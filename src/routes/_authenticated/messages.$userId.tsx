@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Mic, Video, Send, X, Edit2, ImagePlus, Smile, FileImage } from "lucide-react";
 import { GifPicker } from "@/components/GifPicker";
 
@@ -366,13 +367,20 @@ function Chat() {
             <Mic className="h-4 w-4" />
           </Button>
         )}
-        <Input
+        <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && void send()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              void send();
+            }
+          }}
           placeholder="Message"
           aria-label="Message"
           disabled={isRecording}
+          className="min-h-[40px] max-h-[120px] resize-none"
+          rows={1}
         />
         <Button onClick={() => void send()} disabled={isRecording}>
           <Send className="h-4 w-4" />

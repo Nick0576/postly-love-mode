@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { MusicPicker, type MusicPick } from "@/components/MusicPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, uploadMedia, type Profile, getChatBubbleFromStorage, saveChatBubbleToStorage } from "@/lib/postly";
 import { applyTheme, getTheme, setTheme, type Theme } from "@/lib/theme";
@@ -29,6 +30,8 @@ function SettingsPage() {
   const [bio, setBio] = useState("");
   const [chatBubbleText, setChatBubbleText] = useState("");
   const [chatBubbleEnabled, setChatBubbleEnabled] = useState(false);
+  const [chatBubbleMusicVideoId, setChatBubbleMusicVideoId] = useState("");
+  const [chatBubbleMusicTitle, setChatBubbleMusicTitle] = useState("");
   const [profileViewHistoryEnabled, setProfileViewHistoryEnabled] = useState(true);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +50,7 @@ function SettingsPage() {
         const uid = await currentUserId();
         const { data, error } = await supabase
           .from("profiles")
-          .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,profile_view_history_enabled")
+          .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,chat_bubble_music_video_id,chat_bubble_music_title,profile_view_history_enabled")
           .eq("id", uid)
           .maybeSingle();
         if (error) throw error;
@@ -62,6 +65,8 @@ function SettingsPage() {
         
         setChatBubbleText(dbBubbleText ?? localBubble?.text ?? "");
         setChatBubbleEnabled(dbBubbleEnabled ?? localBubble?.enabled ?? false);
+        setChatBubbleMusicVideoId(p?.chat_bubble_music_video_id ?? "");
+        setChatBubbleMusicTitle(p?.chat_bubble_music_title ?? "");
         setProfileViewHistoryEnabled(p?.profile_view_history_enabled ?? true);
         return p;
       } catch (e) {
@@ -85,6 +90,8 @@ function SettingsPage() {
           bio, 
           chat_bubble_text: chatBubbleText,
           chat_bubble_enabled: chatBubbleEnabled,
+          chat_bubble_music_video_id: chatBubbleMusicVideoId,
+          chat_bubble_music_title: chatBubbleMusicTitle,
           profile_view_history_enabled: profileViewHistoryEnabled,
           ...(avatar_url && !isBanner ? { avatar_url } : {}),
           ...(avatar_url && isBanner ? { banner_url: avatar_url } : {})
@@ -198,6 +205,25 @@ function SettingsPage() {
               maxLength={50}
             />
             <p className="text-xs text-muted-foreground">Max 50 characters</p>
+          </div>
+          <div className="space-y-1">
+            <Label>Bubble Music</Label>
+            {chatBubbleMusicVideoId ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">{chatBubbleMusicTitle}</p>
+                <Button variant="outline" size="sm" onClick={() => {
+                  setChatBubbleMusicVideoId("");
+                  setChatBubbleMusicTitle("");
+                }}>
+                  Remove Music
+                </Button>
+              </div>
+            ) : (
+              <MusicPicker onPick={(m: MusicPick) => {
+                setChatBubbleMusicVideoId(m.videoId);
+                setChatBubbleMusicTitle(m.title);
+              }} />
+            )}
           </div>
           <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
         </section>

@@ -6,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/PostCard";
+import { YouTubeMusicPlayer } from "@/components/YouTubeMusicPlayer";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, signedUrl, type Profile, isUserOnline, recordProfileView, getProfileViews, timeAgo, cleanupOldProfileViews } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
@@ -40,7 +41,7 @@ function ProfilePage() {
       const me = await currentUserId();
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online,profile_view_history_enabled")
+        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,chat_bubble_music_video_id,chat_bubble_music_title,last_seen,is_online,profile_view_history_enabled")
         .eq("username", username)
         .maybeSingle();
       if (!profile) return null;
@@ -369,6 +370,15 @@ function ProfilePage() {
               <p className="text-center text-muted-foreground">
                 {data.profile.display_name || data.profile.username}
               </p>
+              {data.profile.chat_bubble_music_video_id && (
+                <div className="w-full">
+                  <YouTubeMusicPlayer 
+                    videoId={data.profile.chat_bubble_music_video_id}
+                    title={data.profile.chat_bubble_music_title}
+                    autoplay={true}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
