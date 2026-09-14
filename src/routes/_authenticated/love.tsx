@@ -71,9 +71,13 @@ function Love() {
   const answers = draft ?? data?.mine ?? null;
   const started = answers !== null && !locked;
   
+  // Check if current user has started Love Mode (has started_at timestamp)
+  const currentUserStarted = data?.mine !== null;
   // Check if any mutual follower has started Love Mode
   const hasMutualStarted = data?.matches.some(m => m.started_at !== null);
   const firstMutualStarted = data?.matches.find(m => m.started_at !== null);
+  // Show profile pictures when both have started
+  const showProfilePictures = currentUserStarted && hasMutualStarted && firstMutualStarted;
 
   async function startLoveMode() {
     if (!data) return;
@@ -145,7 +149,7 @@ function Love() {
       title={
         <div className="flex items-center gap-2">
           <span>Love Mode</span>
-          {hasMutualStarted && firstMutualStarted && data?.myProfile && (
+          {showProfilePictures && data?.myProfile && (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 <Avatar url={data.myProfile.avatar_url} name={data.myProfile.display_name || data.myProfile.username} size={24} />
