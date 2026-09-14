@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { timeAgo, type PostRow } from "@/lib/postly";
 import { useState, useRef } from "react";
+import { toast } from "sonner";
 
 export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, isPinned, onTogglePin, onEdit }: {
   post: PostRow;
@@ -30,9 +31,13 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
     isLongPress.current = false;
     longPressTimer.current = setTimeout(() => {
       isLongPress.current = true;
-      // Long press only triggers pin action if available
+      // Long press triggers pin action if available
       if (onTogglePin) {
         onTogglePin();
+        toast.success(isPinned ? "Post unpinned" : "Your post has been pinned");
+      } else {
+        // If no pin action, show menu
+        setMenuOpen(true);
       }
     }, 500);
   };
