@@ -31,18 +31,6 @@ function Love() {
     applyTheme(getTheme());
   }, []);
 
-  // Polling for Love Mode updates every 1 second
-  useEffect(() => {
-    const interval = setInterval(() => {
-      console.log('Polling Love Mode data...');
-      void qc.invalidateQueries({ queryKey: ["love"] });
-    }, 1000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [qc]);
-
   const { data } = useQuery({
     queryKey: ["love"],
     queryFn: async () => {
@@ -91,6 +79,7 @@ function Love() {
       
       return { me, myProfile: myProfile as Profile, mine: mine, matches, mutuals: mutuals.size };
     },
+    refetchInterval: 1000,
   });
 
   const locked = !!data && data.mutuals === 0;
