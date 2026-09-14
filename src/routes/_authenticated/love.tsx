@@ -87,7 +87,7 @@ function Love() {
   const started = answers !== null && !locked;
   
   // Show profile pictures when BOTH current user AND mutual follower have started Love Mode
-  const currentUserStarted = data?.mine?.started_at !== null;
+  const currentUserStarted = data?.mine !== null; // Has any love_answers entry
   const mutualStarted = data?.matches.some(m => m.started_at !== null);
   const showProfilePictures = currentUserStarted && mutualStarted && data?.matches.length > 0;
   const firstMatch = data?.matches.find(m => m.started_at !== null);
