@@ -31,11 +31,12 @@ function Love() {
     applyTheme(getTheme());
   }, []);
 
-  // Polling for Love Mode updates every 2 seconds
+  // Polling for Love Mode updates every 1 second
   useEffect(() => {
     const interval = setInterval(() => {
+      console.log('Polling Love Mode data...');
       void qc.invalidateQueries({ queryKey: ["love"] });
-    }, 2000);
+    }, 1000);
 
     return () => {
       clearInterval(interval);
