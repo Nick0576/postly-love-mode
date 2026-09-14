@@ -101,7 +101,7 @@ function PostPage() {
         .in("comment_id", commentIds);
       
       if (data) {
-        setLikedComments(new Set(data.map(l => l.comment_id)));
+        setLikedComments(new Set(data.map(l => l.comment_id).filter((x): x is string => !!x)));
       }
     };
     
