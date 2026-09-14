@@ -46,6 +46,9 @@ export function AccountSwitcher() {
   const [switchPassword, setSwitchPassword] = useState("");
 
   useEffect(() => {
+    setAccounts(getStoredAccounts());
+    setActiveAccount(getActiveAccount());
+
     async function loadChatBubble() {
       try {
         const uid = await currentUserId();
@@ -66,10 +69,7 @@ export function AccountSwitcher() {
     }
     loadChatBubble();
 
-    // Set online status
     setOnlineStatus(true);
-
-    // Set offline on unmount
     return () => {
       setOnlineStatus(false);
     };
