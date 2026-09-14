@@ -6,12 +6,12 @@ import { timeAgo, type PostRow } from "@/lib/postly";
 export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, isPinned, onTogglePin, onEdit }: { 
   post: PostRow; 
   onDelete?: (() => void) | undefined;
-  hasLiked?: boolean;
-  likeCount?: number;
-  onToggleLike?: () => void;
-  isPinned?: boolean;
-  onTogglePin?: () => void;
-  onEdit?: () => void;
+  hasLiked?: boolean | undefined;
+  likeCount?: number | undefined;
+  onToggleLike?: (() => void) | undefined;
+  isPinned?: boolean | undefined;
+  onTogglePin?: (() => void) | undefined;
+  onEdit?: (() => void | Promise<void>) | undefined;
 }) {
   const author = post.profiles;
   return (
