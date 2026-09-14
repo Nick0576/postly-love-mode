@@ -332,6 +332,7 @@ function Chat() {
                   <img src={m.media_url} alt="GIF" className="max-h-64 rounded-lg" />
                 )}
                 {m.media_type === "sticker" && <span className="text-4xl">{m.content}</span>}
+                {(m.media_type === "love_result" || m.media_type === "love_waiting") && m.content}
                 {m.content && !m.media_type && m.content}
               </>
             )}

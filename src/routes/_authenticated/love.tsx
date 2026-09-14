@@ -142,7 +142,7 @@ function Love() {
           await supabase.from("messages").insert({
             sender_id: data.me,
             recipient_id: match.profile.id,
-            content: `Love Mode: You are ${score}% compatible with @${data.me}! 💕`,
+            content: `Love Mode: You are ${score}% compatible with @${data.myProfile?.display_name || data.myProfile?.username}! 💕`,
             media_type: "love_result"
           });
           
