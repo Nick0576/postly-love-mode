@@ -62,25 +62,39 @@ function Love() {
       const back = new Set((followMe ?? []).map((r) => r.follower_id));
       const mutuals = new Set((iFollow ?? []).map((r) => r.following_id).filter((id) => back.has(id)));
       const mine = rows?.find((r) => r.user_id === me);
+      // Include all mutual followers, not just those with love_answers
       const others = (rows ?? []).filter((r) => r.user_id !== me && mutuals.has(r.user_id));
+      const mutualsWithoutAnswers = Array.from(mutuals).filter(id => !others.find(o => o.user_id === id));
+      
       let matches: { profile: Profile; score: number; started_at: string | null }[] = [];
-      if (mine && others.length) {
+      
+      // Get profiles for all mutual followers (with and without answers)
+      const allMutualIds = [...others.map(o => o.user_id), ...mutualsWithoutAnswers];
+      if (allMutualIds.length > 0) {
         const { data: people } = await supabase
           .from("profiles")
           .select("id,username,display_name,bio,avatar_url")
-          .in("id", others.map((o) => o.user_id));
-        matches = (people ?? [])
-          .map((p) => {
-            const theirs = others.find((o) => o.user_id === p.id)!;
+          .in("id", allMutualIds);
+        
+        matches = (people ?? []).map((p) => {
+          const theirs = others.find((o) => o.user_id === p.id);
+          if (mine && theirs) {
             const same = (mine.answers as number[]).filter((a, i) => a === (theirs.answers as number[])[i]).length;
             return { 
               profile: p as Profile, 
               score: Math.round((same / LOVE_QUESTIONS.length) * 100),
               started_at: theirs.started_at
             };
-          })
-          .sort((a, b) => b.score - a.score);
+          } else {
+            return { 
+              profile: p as Profile, 
+              score: 0,
+              started_at: theirs?.started_at || null
+            };
+          }
+        }).sort((a, b) => b.score - a.score);
       }
+      
       return { me, myProfile: myProfile as Profile, mine: mine, matches, mutuals: mutuals.size };
     },
   });
