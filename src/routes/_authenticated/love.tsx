@@ -34,18 +34,31 @@ function Love() {
   // Real-time subscription for love_answers changes
   useEffect(() => {
     const channel = supabase
-      .channel('love_answers_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'love_answers'
-      }, () => {
-        void qc.invalidateQueries({ queryKey: ["love"] });
-      })
-      .subscribe();
+      .channel('love_mode_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'love_answers'
+        },
+        (payload) => {
+          console.log('Love Mode change detected:', payload);
+          void qc.invalidateQueries({ queryKey: ["love"] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
+
+    // Polling fallback every 5 seconds
+    const interval = setInterval(() => {
+      void qc.invalidateQueries({ queryKey: ["love"] });
+    }, 5000);
 
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(interval);
     };
   }, [qc]);
 
