@@ -214,6 +214,7 @@ function SettingsPage() {
                 <Button variant="outline" size="sm" onClick={() => {
                   setChatBubbleMusicVideoId("");
                   setChatBubbleMusicTitle("");
+                  void save();
                 }}>
                   Remove Music
                 </Button>
