@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { MessageCircle, Heart, Pin } from "lucide-react";
+import { MessageCircle, Heart, Pin, Pencil } from "lucide-react";
 import { Avatar, Media } from "@/components/Media";
 import { timeAgo, type PostRow } from "@/lib/postly";
 
-export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, isPinned, onTogglePin, onEdit }: { 
-  post: PostRow; 
+export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, isPinned, onTogglePin, onEdit }: {
+  post: PostRow;
   onDelete?: (() => void) | undefined;
   hasLiked?: boolean | undefined;
   likeCount?: number | undefined;
@@ -31,21 +31,31 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={onTogglePin}
-            className={`text-xs ${isPinned ? "text-primary" : "text-muted-foreground"} hover:text-primary`}
-            title={isPinned ? "Unpin post" : "Pin post"}
-            disabled={!onTogglePin}
-          >
-            <Pin className={`h-4 w-4 ${isPinned ? "fill-current" : ""}`} />
-          </button>
+          {isPinned && !onTogglePin && (
+            <Pin className="h-4 w-4 fill-current text-primary" />
+          )}
+          {onTogglePin && (
+            <button
+              type="button"
+              onClick={onTogglePin}
+              className={`inline-flex items-center gap-1 text-xs ${isPinned ? "text-primary" : "text-muted-foreground"} hover:text-primary transition-colors`}
+              title={isPinned ? "Unpin post" : "Pin post"}
+            >
+              <Pin className={`h-4 w-4 ${isPinned ? "fill-current" : ""}`} />
+            </button>
+          )}
           {onEdit && (
-            <button onClick={onEdit} className="text-xs text-muted-foreground hover:underline">
-              Edit
+            <button
+              type="button"
+              onClick={() => void onEdit()}
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+              title="Edit post"
+            >
+              <Pencil className="h-4 w-4" />
             </button>
           )}
           {onDelete && (
-            <button onClick={onDelete} className="text-xs text-destructive hover:underline">
+            <button type="button" onClick={onDelete} className="text-xs text-destructive hover:underline">
               Delete
             </button>
           )}
@@ -55,12 +65,13 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
       <Media path={post.media_url} />
       <div className="mt-3 flex items-center gap-4">
         <button
+          type="button"
           onClick={onToggleLike}
           className={`inline-flex items-center gap-2 text-sm ${hasLiked ? "text-red-500" : "text-muted-foreground"} hover:text-red-500 transition-colors`}
           disabled={!onToggleLike}
         >
           <Heart className={`h-4 w-4 ${hasLiked ? "fill-current" : ""}`} />
-          {likeCount !== undefined && likeCount}
+          {likeCount !== undefined ? likeCount : ""}
         </button>
         <Link
           to="/post/$postId"
