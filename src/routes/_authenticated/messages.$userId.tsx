@@ -37,7 +37,7 @@ function Chat() {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+      textarea.style.height = Math.min(textarea.scrollHeight, 250) + 'px';
     }
   };
 
@@ -359,59 +359,63 @@ function Chat() {
           ))}
         </div>
       )}
-      <div className="fixed inset-x-0 bottom-16 mx-auto flex max-w-xl gap-2 bg-background px-4 py-3">
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*,video/*"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            e.target.value = "";
-            if (f) void sendFile(f);
-          }}
-        />
-        <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={isRecording || uploading}>
-          <ImagePlus className="h-4 w-4" />
-        </Button>
-        <Button variant="outline" onClick={() => { setShowGifs((v) => !v); setShowStickers(false); }} disabled={isRecording}>
-          <FileImage className="h-4 w-4" />
-        </Button>
-        <Button variant="outline" onClick={() => { setShowStickers((v) => !v); setShowGifs(false); }} disabled={isRecording}>
-          <Smile className="h-4 w-4" />
-        </Button>
-        {isRecording ? (
-          <Button variant="destructive" onClick={stopRecording} className="flex items-center gap-2">
-            <X className="h-4 w-4" />
-            {recordingTime}s
+      <div className="fixed inset-x-0 bottom-16 mx-auto flex max-w-xl flex-col gap-2 bg-background px-4 py-3">
+        <div className="flex gap-2">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,video/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) void sendFile(f);
+            }}
+          />
+          <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={isRecording || uploading}>
+            <ImagePlus className="h-4 w-4" />
           </Button>
-        ) : (
-          <Button variant="outline" onClick={startRecording} disabled={!!text}>
-            <Mic className="h-4 w-4" />
+          <Button variant="outline" onClick={() => { setShowGifs((v) => !v); setShowStickers(false); }} disabled={isRecording}>
+            <FileImage className="h-4 w-4" />
           </Button>
-        )}
-        <Textarea
-          ref={textareaRef}
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            autoResizeTextarea();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              void send();
-            }
-          }}
-          placeholder="Message"
-          aria-label="Message"
-          disabled={isRecording}
-          className="min-h-[60px] max-h-[200px] resize-none overflow-hidden"
-          rows={1}
-        />
-        <Button onClick={() => void send()} disabled={isRecording}>
-          <Send className="h-4 w-4" />
-        </Button>
+          <Button variant="outline" onClick={() => { setShowStickers((v) => !v); setShowGifs(false); }} disabled={isRecording}>
+            <Smile className="h-4 w-4" />
+          </Button>
+          {isRecording ? (
+            <Button variant="destructive" onClick={stopRecording} className="flex items-center gap-2">
+              <X className="h-4 w-4" />
+              {recordingTime}s
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={startRecording} disabled={!!text}>
+              <Mic className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Textarea
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              autoResizeTextarea();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
+            }}
+            placeholder="Message"
+            aria-label="Message"
+            disabled={isRecording}
+            className="min-h-[80px] max-h-[250px] resize-none overflow-hidden flex-1"
+            rows={1}
+          />
+          <Button onClick={() => { void send(); }} disabled={isRecording}>
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </AppShell>
   );

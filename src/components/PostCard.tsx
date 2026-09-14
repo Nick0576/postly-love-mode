@@ -54,17 +54,12 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
     }
   };
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setMenuOpen(true);
-  };
   return (
     <article 
       className="rounded-2xl border bg-card p-4 shadow-soft relative"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchMove={handleTouchMove}
-      onContextMenu={handleContextMenu}
     >
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
