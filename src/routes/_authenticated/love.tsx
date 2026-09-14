@@ -35,10 +35,11 @@ function Love() {
     queryKey: ["love"],
     queryFn: async () => {
       const me = await currentUserId();
-      const [{ data: rows }, { data: iFollow }, { data: followMe }] = await Promise.all([
+      const [{ data: rows }, { data: iFollow }, { data: followMe }, { data: myProfile }] = await Promise.all([
         supabase.from("love_answers").select("user_id,answers,started_at"),
         supabase.from("follows").select("following_id").eq("follower_id", me),
         supabase.from("follows").select("follower_id").eq("following_id", me),
+        supabase.from("profiles").select("id,username,display_name,avatar_url").eq("id", me).single()
       ]);
       const back = new Set((followMe ?? []).map((r) => r.follower_id));
       const mutuals = new Set((iFollow ?? []).map((r) => r.following_id).filter((id) => back.has(id)));
@@ -62,13 +63,17 @@ function Love() {
           })
           .sort((a, b) => b.score - a.score);
       }
-      return { me, mine: (mine?.answers as number[] | undefined) ?? null, matches, mutuals: mutuals.size };
+      return { me, myProfile: myProfile as Profile, mine: (mine?.answers as number[] | undefined) ?? null, matches, mutuals: mutuals.size };
     },
   });
 
   const locked = !!data && data.mutuals === 0;
   const answers = draft ?? data?.mine ?? null;
   const started = answers !== null && !locked;
+  
+  // Check if any mutual follower has started Love Mode
+  const hasMutualStarted = data?.matches.some(m => m.started_at !== null);
+  const firstMutualStarted = data?.matches.find(m => m.started_at !== null);
 
   async function startLoveMode() {
     if (!data) return;
@@ -81,18 +86,6 @@ function Love() {
       started_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
-    
-    // Notify mutual followers that you started Love Mode
-    if (data.matches.length > 0) {
-      for (const match of data.matches) {
-        await supabase.from("messages").insert({
-          sender_id: data.me,
-          recipient_id: match.profile.id,
-          content: "I just started Love Mode! 💕",
-          media_type: "love_started"
-        });
-      }
-    }
   }
 
   async function saveAll(list: number[]) {
@@ -148,7 +141,25 @@ function Love() {
   }
 
   return (
-    <AppShell title="Love Mode">
+    <AppShell 
+      title={
+        <div className="flex items-center gap-2">
+          <span>Love Mode</span>
+          {hasMutualStarted && firstMutualStarted && data?.myProfile && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <Avatar url={data.myProfile.avatar_url} name={data.myProfile.display_name || data.myProfile.username} size={24} />
+                <span className="text-xs">{data.myProfile.display_name || data.myProfile.username}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Avatar url={firstMutualStarted.profile.avatar_url} name={firstMutualStarted.profile.display_name || firstMutualStarted.profile.username} size={24} />
+                <span className="text-xs">{firstMutualStarted.profile.display_name || firstMutualStarted.profile.username}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      }
+    >
       {locked && (
         <div className="rounded-2xl border p-4 text-center">
           <p className="text-sm text-muted-foreground">
@@ -165,6 +176,14 @@ function Love() {
           <Button className="mt-4" onClick={() => void startLoveMode()}>
             Start
           </Button>
+        </div>
+      )}
+
+      {started && !hasMutualStarted && (
+        <div className="rounded-2xl border p-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            Waiting for other user to join Love Mode...
+          </p>
         </div>
       )}
 
@@ -227,14 +246,7 @@ function Love() {
               className="flex items-center gap-3 rounded-xl border p-3"
             >
               <Avatar url={m.profile.avatar_url} name={m.profile.display_name || m.profile.username} size={36} />
-              <div className="flex-1">
-                <span className="block truncate">{m.profile.display_name || m.profile.username}</span>
-                {m.started_at ? (
-                  <span className="text-xs text-muted-foreground">Started Love Mode</span>
-                ) : (
-                  <span className="text-xs text-muted-foreground">Not started Love Mode yet</span>
-                )}
-              </div>
+              <span className="flex-1 truncate">{m.profile.display_name || m.profile.username}</span>
               <span className="font-bold text-primary">{m.score}%</span>
             </Link>
           ))}
