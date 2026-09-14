@@ -34,7 +34,9 @@ CREATE POLICY "Group creators can update their groups" ON public.group_chats FOR
 
 -- Policies for group_members
 CREATE POLICY "Users can view group members" ON public.group_members FOR SELECT USING (
-  group_id IN (SELECT group_id FROM public.group_members WHERE user_id = auth.uid())
+  user_id = auth.uid() OR group_id IN (
+    SELECT group_id FROM public.group_members WHERE user_id = auth.uid()
+  )
 );
 CREATE POLICY "Group creators can add members" ON public.group_members FOR INSERT WITH CHECK (
   group_id IN (SELECT id FROM public.group_chats WHERE created_by = auth.uid())
