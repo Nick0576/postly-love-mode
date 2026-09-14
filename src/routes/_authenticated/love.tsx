@@ -86,21 +86,11 @@ function Love() {
   const answers = draft ?? data?.mine?.answers ?? null;
   const started = answers !== null && !locked;
   
-  // Check if current user has started Love Mode (has started_at timestamp)
+  // Show profile pictures when BOTH current user AND mutual follower have started Love Mode
   const currentUserStarted = data?.mine?.started_at !== null;
-  // Check if any mutual follower has started Love Mode
-  const hasMutualStarted = data?.matches.some(m => m.started_at !== null);
-  const firstMutualStarted = data?.matches.find(m => m.started_at !== null);
-  // Show profile pictures when both have started
-  const showProfilePictures = currentUserStarted && hasMutualStarted && firstMutualStarted;
-  
-  console.log('Love Mode state:', {
-    currentUserStarted,
-    hasMutualStarted,
-    showProfilePictures,
-    mine: data?.mine,
-    matches: data?.matches
-  });
+  const mutualStarted = data?.matches.some(m => m.started_at !== null);
+  const showProfilePictures = currentUserStarted && mutualStarted && data?.matches.length > 0;
+  const firstMatch = data?.matches.find(m => m.started_at !== null);
 
   async function startLoveMode() {
     if (!data) return;
@@ -172,15 +162,15 @@ function Love() {
       title={
         <div className="flex items-center gap-2">
           <span>Love Mode</span>
-          {showProfilePictures && data?.myProfile && (
+          {showProfilePictures && data?.myProfile && firstMatch && (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 <Avatar url={data.myProfile.avatar_url} name={data.myProfile.display_name || data.myProfile.username} size={24} />
                 <span className="text-xs">{data.myProfile.display_name || data.myProfile.username}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Avatar url={firstMutualStarted.profile.avatar_url} name={firstMutualStarted.profile.display_name || firstMutualStarted.profile.username} size={24} />
-                <span className="text-xs">{firstMutualStarted.profile.display_name || firstMutualStarted.profile.username}</span>
+                <Avatar url={firstMatch.profile.avatar_url} name={firstMatch.profile.display_name || firstMatch.profile.username} size={24} />
+                <span className="text-xs">{firstMatch.profile.display_name || firstMatch.profile.username}</span>
               </div>
             </div>
           )}
