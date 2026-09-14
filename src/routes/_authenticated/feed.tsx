@@ -96,30 +96,53 @@ function Feed() {
   const togglePin = useMutation({
     mutationFn: async ({ postId, isPinned }: { postId: string; isPinned: boolean }) => {
       const uid = await currentUserId();
-      if (isPinned) {
-        const { error } = await supabase
-          .from("posts")
-          .update({ is_pinned: false })
-          .eq("id", postId)
-          .eq("user_id", uid);
-        if (error) throw error;
-      } else {
-        // First unpin any existing pinned post for this user
-        await supabase
-          .from("posts")
-          .update({ is_pinned: false })
-          .eq("user_id", uid)
-          .eq("is_pinned", true);
-        // Then pin the new post
-        const { error } = await supabase
-          .from("posts")
-          .update({ is_pinned: true })
-          .eq("id", postId)
-          .eq("user_id", uid);
-        if (error) throw error;
+      console.log("Toggle pin called:", { postId, isPinned, uid });
+      try {
+        if (isPinned) {
+          console.log("Unpinning post:", postId);
+          const { error } = await supabase
+            .from("posts")
+            .update({ is_pinned: false })
+            .eq("id", postId)
+            .eq("user_id", uid);
+          if (error) {
+            console.error("Failed to unpin:", error);
+            throw error;
+          }
+          console.log("Post unpinned successfully");
+        } else {
+          console.log("Pinning post:", postId);
+          // First unpin any existing pinned post for this user
+          await supabase
+            .from("posts")
+            .update({ is_pinned: false })
+            .eq("user_id", uid)
+            .eq("is_pinned", true);
+          // Then pin the new post
+          const { error } = await supabase
+            .from("posts")
+            .update({ is_pinned: true })
+            .eq("id", postId)
+            .eq("user_id", uid);
+          if (error) {
+            console.error("Failed to pin:", error);
+            throw error;
+          }
+          console.log("Post pinned successfully");
+        }
+      } catch (e) {
+        console.error("Error in togglePin:", e);
+        throw e;
       }
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["feed"] }),
+    onSuccess: () => {
+      console.log("Pin mutation succeeded, invalidating queries");
+      void qc.invalidateQueries({ queryKey: ["feed"] });
+    },
+    onError: (error) => {
+      console.error("Pin mutation failed:", error);
+      alert("Failed to pin post: " + (error instanceof Error ? error.message : String(error)));
+    },
   });
 
   const editPost = useMutation({
