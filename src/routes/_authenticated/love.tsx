@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
@@ -23,7 +23,9 @@ export const Route = createFileRoute("/_authenticated/love")({
 
 function Love() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [draft, setDraft] = useState<number[] | null>(null);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     applyTheme(getTheme());
@@ -68,7 +70,52 @@ function Love() {
     if (!data) return;
     await supabase.from("love_answers").upsert({ user_id: data.me, answers: list, updated_at: new Date().toISOString() });
     setDraft(null);
+    setSaved(true);
     void qc.invalidateQueries({ queryKey: ["love"] });
+    
+    // Send waiting message and check for mutual submissions
+    if (data.matches.length > 0) {
+      for (const match of data.matches) {
+        // Check if the other user has already submitted their answers
+        const { data: otherAnswers } = await supabase
+          .from("love_answers")
+          .select("answers")
+          .eq("user_id", match.profile.id)
+          .single();
+        
+        if (otherAnswers) {
+          // Both have submitted - send compatibility result to both
+          const myAnswers = list;
+          const theirAnswers = otherAnswers.answers as number[];
+          const same = myAnswers.filter((a, i) => a === theirAnswers[i]).length;
+          const score = Math.round((same / LOVE_QUESTIONS.length) * 100);
+          
+          // Send result to the other user
+          await supabase.from("messages").insert({
+            sender_id: data.me,
+            recipient_id: match.profile.id,
+            content: `Love Mode: You are ${score}% compatible with @${data.me}! 💕`,
+            media_type: "love_result"
+          });
+          
+          // Send result to current user
+          await supabase.from("messages").insert({
+            sender_id: match.profile.id,
+            recipient_id: data.me,
+            content: `Love Mode: You are ${score}% compatible with @${match.profile.display_name || match.profile.username}! 💕`,
+            media_type: "love_result"
+          });
+        } else {
+          // Only current user has submitted - send waiting message
+          await supabase.from("messages").insert({
+            sender_id: data.me,
+            recipient_id: match.profile.id,
+            content: "Waiting for you to submit your Love Mode answers... 💕",
+            media_type: "love_waiting"
+          });
+        }
+      }
+    }
   }
 
   return (
@@ -123,9 +170,20 @@ function Love() {
               </div>
             </div>
           ))}
-          <Button className="w-full" onClick={() => void saveAll(answers)}>
-            Save answers
-          </Button>
+          <div className="space-y-2">
+            <Button className="w-full" onClick={() => void saveAll(answers)}>
+              Save answers
+            </Button>
+            {saved && data?.matches.length > 0 && (
+              <Button 
+                className="w-full" 
+                variant="outline"
+                onClick={() => navigate({ to: "/messages/$userId", params: { userId: data.matches[0].profile.id } })}
+              >
+                Go to chat to see results
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
