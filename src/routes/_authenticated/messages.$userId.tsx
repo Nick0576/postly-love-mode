@@ -37,7 +37,7 @@ function Chat() {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+      textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
     }
   };
 
@@ -396,7 +396,7 @@ function Chat() {
           placeholder="Message"
           aria-label="Message"
           disabled={isRecording}
-          className="min-h-[40px] max-h-[120px] resize-none overflow-hidden"
+          className="min-h-[60px] max-h-[200px] resize-none overflow-hidden"
           rows={1}
         />
         <Button onClick={() => void send()} disabled={isRecording}>
