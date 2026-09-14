@@ -339,7 +339,7 @@ function Chat() {
               <div className="absolute -top-2 -right-2 flex gap-1">
                 <button
                   onClick={() => startEdit(m.id, m.content || "")}
-                  className="h-5 w-5 rounded-full bg-blue-500 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-5 w-5 rounded-full bg-blue-500 text-white text-xs transition-opacity"
                 >
                   <Edit2 className="h-3 w-3" />
                 </button>
@@ -349,7 +349,7 @@ function Chat() {
                       deleteMessage.mutate(m.id);
                     }
                   }}
-                  className="h-5 w-5 rounded-full bg-red-500 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-5 w-5 rounded-full bg-red-500 text-white text-xs transition-opacity"
                 >
                   ×
                 </button>
