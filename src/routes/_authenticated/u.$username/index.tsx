@@ -267,7 +267,7 @@ function ProfilePage() {
             <div className="mt-4 rounded-2xl border p-4 bg-gradient-to-r from-pink-50 to-red-50 dark:from-pink-950/20 dark:to-red-950/20">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">❤️</span>
-                <div>
+                <div className="flex-1">
                   <h3 className="font-semibold text-lg">Love Mode</h3>
                   {data.loveMatch !== null ? (
                     <p className="text-sm text-muted-foreground">You and @{data.profile.username} are {data.loveMatch}% compatible!</p>
@@ -275,14 +275,14 @@ function ProfilePage() {
                     <p className="text-sm text-muted-foreground">Answer questions to see your compatibility with @{data.profile.username}!</p>
                   )}
                 </div>
+                <Button asChild size="sm">
+                  <Link to="/love">
+                    {data.loveMatch !== null ? "Retake" : "Start"}
+                  </Link>
+                </Button>
               </div>
               {data.loveMatch !== null && data.loveMatch >= 70 && (
                 <p className="mt-3 text-sm font-medium text-red-600 dark:text-red-400">✨ Great match!</p>
-              )}
-              {data.loveMatch === null && (
-                <Button asChild className="mt-3" size="sm">
-                  <Link to="/love">Answer questions</Link>
-                </Button>
               )}
             </div>
           )}

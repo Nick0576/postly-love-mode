@@ -69,9 +69,7 @@ function Love() {
 
   const locked = !!data && data.mutuals === 0;
   const answers = draft ?? data?.mine ?? null;
-  const hasSavedAnswers = data?.mine !== null;
-  const isComplete = data?.mine && !data.mine.every(a => a === -1);
-  const isAnswering = draft !== null;
+  const started = answers !== null && !locked;
   
   // Check if any mutual follower has started Love Mode
   const hasMutualStarted = data?.matches.some(m => m.started_at !== null);
@@ -170,7 +168,7 @@ function Love() {
         </div>
       )}
 
-      {!hasSavedAnswers && !locked && (
+      {!started && !locked && (
         <div className="rounded-2xl border p-4 text-center">
           <p className="text-sm text-muted-foreground">
             Answer 20 quick questions. We only compare you with people you follow who follow you back.
@@ -181,30 +179,15 @@ function Love() {
         </div>
       )}
 
-      {hasSavedAnswers && !isComplete && !locked && (
+      {started && !hasMutualStarted && (
         <div className="rounded-2xl border p-4 text-center">
           <p className="text-sm text-muted-foreground">
-            You have incomplete Love Mode answers. Continue or restart?
+            Waiting for other user to join Love Mode...
           </p>
-          <div className="mt-4 flex gap-2 justify-center">
-            <Button onClick={() => setDraft(data?.mine)}>Continue</Button>
-            <Button variant="outline" onClick={() => void startLoveMode()}>Restart</Button>
-          </div>
         </div>
       )}
 
-      {isComplete && !locked && (
-        <div className="rounded-2xl border p-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            You have completed Love Mode. Restart to answer again?
-          </p>
-          <Button className="mt-4" variant="outline" onClick={() => void startLoveMode()}>
-            Restart Love Mode
-          </Button>
-        </div>
-      )}
-
-      {isAnswering && (
+      {started && (
         <div className="space-y-3">
           {LOVE_QUESTIONS.map((q, i) => (
             <div key={q} className="rounded-xl border p-3">
