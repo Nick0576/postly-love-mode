@@ -104,6 +104,14 @@ function Love() {
   const firstMutualStarted = data?.matches.find(m => m.started_at !== null);
   // Show profile pictures when both have started
   const showProfilePictures = currentUserStarted && hasMutualStarted && firstMutualStarted;
+  
+  console.log('Love Mode state:', {
+    currentUserStarted,
+    hasMutualStarted,
+    showProfilePictures,
+    mine: data?.mine,
+    matches: data?.matches
+  });
 
   async function startLoveMode() {
     if (!data) return;
