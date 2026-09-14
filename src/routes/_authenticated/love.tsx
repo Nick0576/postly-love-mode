@@ -63,16 +63,16 @@ function Love() {
           })
           .sort((a, b) => b.score - a.score);
       }
-      return { me, myProfile: myProfile as Profile, mine: (mine?.answers as number[] | undefined) ?? null, matches, mutuals: mutuals.size };
+      return { me, myProfile: myProfile as Profile, mine: mine, matches, mutuals: mutuals.size };
     },
   });
 
   const locked = !!data && data.mutuals === 0;
-  const answers = draft ?? data?.mine ?? null;
+  const answers = draft ?? data?.mine?.answers ?? null;
   const started = answers !== null && !locked;
   
   // Check if current user has started Love Mode (has started_at timestamp)
-  const currentUserStarted = data?.mine !== null;
+  const currentUserStarted = data?.mine?.started_at !== null;
   // Check if any mutual follower has started Love Mode
   const hasMutualStarted = data?.matches.some(m => m.started_at !== null);
   const firstMutualStarted = data?.matches.find(m => m.started_at !== null);
