@@ -101,7 +101,7 @@ function PostPage() {
         .in("comment_id", commentIds);
       
       if (data) {
-        setLikedComments(new Set(data.map(l => l.comment_id)));
+        setLikedComments(new Set(data.map(l => l.comment_id).filter((x): x is string => !!x)));
       }
     };
     
@@ -203,12 +203,12 @@ function PostPage() {
   const { data: likeCount } = useQuery({
     queryKey: ["like-count", postId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { count, error } = await supabase
         .from("likes")
         .select("*", { count: "exact", head: true })
         .eq("post_id", postId);
       if (error) throw error;
-      return data?.count ?? 0;
+      return count ?? 0;
     },
   });
 

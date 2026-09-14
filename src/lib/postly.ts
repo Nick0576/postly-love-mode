@@ -9,6 +9,8 @@ export type Profile = {
   banner_url: string | null;
   chat_bubble_text: string | null;
   chat_bubble_enabled: boolean;
+  chat_bubble_music_video_id?: string | null;
+  chat_bubble_music_title?: string | null;
   last_seen: string | null;
   is_online: boolean;
   profile_view_history_enabled: boolean;

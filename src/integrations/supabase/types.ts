@@ -161,6 +161,52 @@ export type Database = {
           },
         ]
       }
+      likes: {
+        Row: {
+          comment_id: string | null
+          created_at: string
+          id: string
+          post_id: string | null
+          user_id: string
+        }
+        Insert: {
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          user_id: string
+        }
+        Update: {
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       love_answers: {
         Row: {
           answers: number[]
@@ -247,6 +293,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          is_pinned: boolean | null
           media_url: string | null
           user_id: string
         }
@@ -254,6 +301,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          is_pinned?: boolean | null
           media_url?: string | null
           user_id: string
         }
@@ -261,6 +309,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          is_pinned?: boolean | null
           media_url?: string | null
           user_id?: string
         }
@@ -274,41 +323,89 @@ export type Database = {
           },
         ]
       }
+      profile_views: {
+        Row: {
+          id: string
+          viewed_at: string
+          viewed_user_id: string
+          viewer_id: string
+        }
+        Insert: {
+          id?: string
+          viewed_at?: string
+          viewed_user_id: string
+          viewer_id: string
+        }
+        Update: {
+          id?: string
+          viewed_at?: string
+          viewed_user_id?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_views_viewed_user_id_fkey"
+            columns: ["viewed_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          banner_url: string | null
           bio: string
           chat_bubble_enabled: boolean | null
+          chat_bubble_music_title: string | null
+          chat_bubble_music_video_id: string | null
           chat_bubble_text: string | null
           created_at: string
           display_name: string
           id: string
           is_online: boolean | null
           last_seen: string | null
+          profile_view_history_enabled: boolean | null
           username: string
         }
         Insert: {
           avatar_url?: string | null
+          banner_url?: string | null
           bio?: string
           chat_bubble_enabled?: boolean | null
+          chat_bubble_music_title?: string | null
+          chat_bubble_music_video_id?: string | null
           chat_bubble_text?: string | null
           created_at?: string
           display_name?: string
           id: string
           is_online?: boolean | null
           last_seen?: string | null
+          profile_view_history_enabled?: boolean | null
           username: string
         }
         Update: {
           avatar_url?: string | null
+          banner_url?: string | null
           bio?: string
           chat_bubble_enabled?: boolean | null
+          chat_bubble_music_title?: string | null
+          chat_bubble_music_video_id?: string | null
           chat_bubble_text?: string | null
           created_at?: string
           display_name?: string
           id?: string
           is_online?: boolean | null
           last_seen?: string | null
+          profile_view_history_enabled?: boolean | null
           username?: string
         }
         Relationships: []
