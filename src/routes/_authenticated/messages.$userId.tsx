@@ -424,7 +424,7 @@ function Chat() {
             className="min-h-[80px] max-h-[250px] resize-none overflow-hidden flex-1"
             rows={1}
           />
-          <Button onClick={() => { void send(); }} disabled={isRecording}>
+          <Button onClick={() => void send()} disabled={isRecording || !text.trim()}>
             <Send className="h-4 w-4" />
           </Button>
         </div>
