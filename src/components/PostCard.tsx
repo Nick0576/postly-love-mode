@@ -1,7 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { MessageCircle, Heart, Pin, Pencil } from "lucide-react";
+import { MessageCircle, Heart, Pin, Pencil, Trash2, MoreVertical } from "lucide-react";
 import { Avatar, Media } from "@/components/Media";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { timeAgo, type PostRow } from "@/lib/postly";
+import { useState, useRef } from "react";
 
 export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, isPinned, onTogglePin, onEdit }: {
   post: PostRow;
@@ -14,8 +22,85 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
   onEdit?: (() => void | Promise<void>) | undefined;
 }) {
   const author = post.profiles;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const isLongPress = useRef(false);
+
+  const handleTouchStart = () => {
+    isLongPress.current = false;
+    longPressTimer.current = setTimeout(() => {
+      isLongPress.current = true;
+      setMenuOpen(true);
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+  };
+
+  const handleTouchMove = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMenuOpen(true);
+  };
   return (
-    <article className="rounded-2xl border bg-card p-4 shadow-soft">
+    <article 
+      className="rounded-2xl border bg-card p-4 shadow-soft relative"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+      onContextMenu={handleContextMenu}
+    >
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-2 right-2 h-8 w-8"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {onToggleLike && (
+            <DropdownMenuItem onClick={onToggleLike}>
+              <Heart className={`h-4 w-4 mr-2 ${hasLiked ? "fill-current text-red-500" : ""}`} />
+              {hasLiked ? "Unlike" : "Like"}
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem asChild>
+            <Link to="/post/$postId" params={{ postId: post.id }}>
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Comments
+            </Link>
+          </DropdownMenuItem>
+          {onTogglePin && (
+            <DropdownMenuItem onClick={onTogglePin}>
+              <Pin className={`h-4 w-4 mr-2 ${isPinned ? "fill-current" : ""}`} />
+              {isPinned ? "Unpin" : "Pin"}
+            </DropdownMenuItem>
+          )}
+          {onEdit && (
+            <DropdownMenuItem onClick={() => void onEdit()}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </DropdownMenuItem>
+          )}
+          {onDelete && (
+            <DropdownMenuItem onClick={onDelete} className="text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <div className="flex items-center gap-3">
         <Avatar url={author?.avatar_url ?? null} name={author?.display_name ?? "?"} size={40} />
         <div className="min-w-0">
