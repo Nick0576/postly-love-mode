@@ -30,7 +30,13 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
     isLongPress.current = false;
     longPressTimer.current = setTimeout(() => {
       isLongPress.current = true;
-      setMenuOpen(true);
+      // Long press triggers pin action if available
+      if (onTogglePin) {
+        onTogglePin();
+      } else {
+        // If no pin action, show menu
+        setMenuOpen(true);
+      }
     }, 500);
   };
 
