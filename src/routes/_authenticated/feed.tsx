@@ -104,11 +104,13 @@ function Feed() {
           .eq("user_id", uid);
         if (error) throw error;
       } else {
+        // First unpin any existing pinned post for this user
         await supabase
           .from("posts")
           .update({ is_pinned: false })
           .eq("user_id", uid)
           .eq("is_pinned", true);
+        // Then pin the new post
         const { error } = await supabase
           .from("posts")
           .update({ is_pinned: true })
