@@ -365,6 +365,8 @@ export type Database = {
           banner_url: string | null
           bio: string
           chat_bubble_enabled: boolean | null
+          chat_bubble_music_title: string | null
+          chat_bubble_music_video_id: string | null
           chat_bubble_text: string | null
           created_at: string
           display_name: string
@@ -379,6 +381,8 @@ export type Database = {
           banner_url?: string | null
           bio?: string
           chat_bubble_enabled?: boolean | null
+          chat_bubble_music_title?: string | null
+          chat_bubble_music_video_id?: string | null
           chat_bubble_text?: string | null
           created_at?: string
           display_name?: string
@@ -393,6 +397,8 @@ export type Database = {
           banner_url?: string | null
           bio?: string
           chat_bubble_enabled?: boolean | null
+          chat_bubble_music_title?: string | null
+          chat_bubble_music_video_id?: string | null
           chat_bubble_text?: string | null
           created_at?: string
           display_name?: string
