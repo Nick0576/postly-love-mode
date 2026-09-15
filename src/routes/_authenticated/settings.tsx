@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MusicPicker, type MusicPick } from "@/components/MusicPicker";
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, uploadMedia, type Profile, getChatBubbleFromStorage, saveChatBubbleToStorage, unblockUser, getBlockedUsers } from "@/lib/postly";
+import { currentUserId, uploadMedia, type Profile, getChatBubbleFromStorage, saveChatBubbleToStorage, unblockUser, getBlockedUsers, CHAT_BACKGROUNDS, getChatBackground, saveChatBackground } from "@/lib/postly";
 import { applyTheme, getTheme, setTheme, type Theme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -34,6 +34,7 @@ function SettingsPage() {
   const [chatBubbleEnabled, setChatBubbleEnabled] = useState(false);
   const [chatBubbleMusicVideoId, setChatBubbleMusicVideoId] = useState("");
   const [chatBubbleMusicTitle, setChatBubbleMusicTitle] = useState("");
+  const [chatBackground, setChatBackground] = useState<string | null>(null);
   const [profileViewHistoryEnabled, setProfileViewHistoryEnabled] = useState(true);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +70,7 @@ function SettingsPage() {
         setChatBubbleEnabled(dbBubbleEnabled ?? localBubble?.enabled ?? false);
         setChatBubbleMusicVideoId(p?.chat_bubble_music_video_id ?? "");
         setChatBubbleMusicTitle(p?.chat_bubble_music_title ?? "");
+        setChatBackground(getChatBackground());
         setProfileViewHistoryEnabled(p?.profile_view_history_enabled ?? true);
         return p;
       } catch (e) {
@@ -251,6 +253,41 @@ function SettingsPage() {
             )}
           </div>
           <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
+        </section>
+
+        <section className="space-y-3 rounded-2xl border p-4">
+          <h2 className="font-semibold">Chat Background</h2>
+          <p className="text-xs text-muted-foreground">
+            Choose a background for your messages. This only changes how chats look on your device.
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            {CHAT_BACKGROUNDS.map((bg) => (
+              <button
+                key={bg.id}
+                type="button"
+                onClick={() => setChatBackground(bg.path)}
+                className={`relative overflow-hidden rounded-xl border-2 transition-all aspect-square ${
+                  chatBackground === bg.path ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"
+                }`}
+              >
+                {bg.path ? (
+                  <img src={bg.path} alt={bg.label} className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background text-sm font-medium text-muted-foreground">
+                    Default
+                  </div>
+                )}
+                {chatBackground === bg.path && (
+                  <span className="absolute right-1 top-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+                    ✓
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <Button onClick={() => { saveChatBackground(chatBackground); setSaved(true); setTimeout(() => setSaved(false), 1500); }}>
+            {saved ? "Saved" : "Save"}
+          </Button>
         </section>
 
         <section className="space-y-3 rounded-2xl border p-4">

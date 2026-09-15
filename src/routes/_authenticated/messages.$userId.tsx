@@ -10,7 +10,7 @@ import { GifPicker } from "@/components/GifPicker";
 
 const STICKERS = ["😀","😂","🥰","😍","😎","🤔","😭","😡","👍","👎","🙏","👏","🔥","💯","🎉","✨","❤️","💔","💕","🌹","🐱","🐶","🍕","☕","🌙","⭐","🎵","⚽","🎮","🚀","🌈","💎"];
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, uploadMedia, signedUrl, type Profile, editMessage } from "@/lib/postly";
+import { currentUserId, uploadMedia, signedUrl, type Profile, editMessage, getChatBackground } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 
 type Msg = { id: string; sender_id: string; content: string; media_url: string | null; media_type: string | null; created_at: string };
@@ -55,9 +55,11 @@ function Chat() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<number | null>(null);
+  const [chatBg, setChatBg] = useState<string | null>(null);
 
   useEffect(() => {
     applyTheme(getTheme());
+    setChatBg(getChatBackground());
   }, []);
 
   const { data } = useQuery({
@@ -296,7 +298,11 @@ function Chat() {
         </div>
       }
     >
-      <div className="space-y-2">
+      <div className="relative min-h-[50vh]">
+        {chatBg && (
+          <img src={chatBg} alt="" className="absolute inset-0 h-full w-full object-cover" aria-hidden="true" />
+        )}
+        <div className="relative z-10 space-y-2">
         {data?.msgs.map((m) => (
           <div
             key={m.id}
@@ -359,6 +365,7 @@ function Chat() {
           </div>
         ))}
         {data && !data.msgs.length && <p className="text-sm text-muted-foreground">Say hello.</p>}
+      </div>
       </div>
       {showGifs && data && (
         <GifPicker customerId={data.me} onPick={(g) => void sendGif(g.url)} />

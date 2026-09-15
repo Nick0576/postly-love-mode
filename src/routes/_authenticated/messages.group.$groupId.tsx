@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Mic, Video, Send, X, Users, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, uploadMedia, signedUrl, type Profile, type GroupChat, getGroupMembers, addGroupMember, renameGroupChat, deleteGroupChat, editMessage } from "@/lib/postly";
+import { currentUserId, uploadMedia, signedUrl, type Profile, type GroupChat, getGroupMembers, addGroupMember, renameGroupChat, deleteGroupChat, editMessage, getChatBackground } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 
 type Msg = { id: string; sender_id: string; content: string; media_url: string | null; media_type: string | null; created_at: string; profiles: Profile | null };
@@ -40,9 +40,11 @@ function GroupChat() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<number | null>(null);
+  const [chatBg, setChatBg] = useState<string | null>(null);
 
   useEffect(() => {
     applyTheme(getTheme());
+    setChatBg(getChatBackground());
   }, []);
 
   const { data } = useQuery({
@@ -307,7 +309,11 @@ function GroupChat() {
           </div>
         </div>
       )}
-      <div className="space-y-2">
+      <div className="relative min-h-[50vh]">
+        {chatBg && (
+          <img src={chatBg} alt="" className="absolute inset-0 h-full w-full object-cover" aria-hidden="true" />
+        )}
+        <div className="relative z-10 space-y-2">
         {data?.msgs.map((m) => (
           <div
             key={m.id}
@@ -362,6 +368,7 @@ function GroupChat() {
           </div>
         ))}
         {data && !data.msgs.length && <p className="text-sm text-muted-foreground">No messages yet. Say hello!</p>}
+      </div>
       </div>
       <div className="fixed inset-x-0 bottom-16 mx-auto flex max-w-xl gap-2 bg-background px-4 py-3">
         {isRecording ? (

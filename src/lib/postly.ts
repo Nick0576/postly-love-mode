@@ -346,3 +346,35 @@ export async function isUserBlocked(blockedUserId: string): Promise<boolean> {
   if (error && error.code !== "PGRST116") throw error; // PGRST116 = not found
   return !!data;
 }
+
+// Chat background utilities
+const CHAT_BG_KEY = "postly-chat-background";
+export const CHAT_BACKGROUNDS = [
+  { id: "default", label: "Default", path: null },
+  { id: "bg1", label: "Background 1", path: "/chat-backgrounds/bg1.jpg" },
+  { id: "bg2", label: "Background 2", path: "/chat-backgrounds/bg2.jpg" },
+  { id: "bg3", label: "Background 3", path: "/chat-backgrounds/bg3.jpg" },
+  { id: "bg4", label: "Background 4", path: "/chat-backgrounds/bg4.jpg" },
+  { id: "bg5", label: "Background 5", path: "/chat-backgrounds/bg5.jpg" },
+  { id: "bg6", label: "Background 6", path: "/chat-backgrounds/bg6.jpg" },
+  { id: "bg7", label: "Background 7", path: "/chat-backgrounds/bg7.jpg" },
+  { id: "bg8", label: "Background 8", path: "/chat-backgrounds/bg8.jpg" },
+] as const;
+
+export function getChatBackground(): string | null {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    return localStorage.getItem(CHAT_BG_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveChatBackground(path: string | null): void {
+  if (typeof localStorage === "undefined") return;
+  if (path) {
+    localStorage.setItem(CHAT_BG_KEY, path);
+  } else {
+    localStorage.removeItem(CHAT_BG_KEY);
+  }
+}
