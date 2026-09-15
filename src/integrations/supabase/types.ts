@@ -96,71 +96,6 @@ export type Database = {
           },
         ]
       }
-      group_chats: {
-        Row: {
-          created_at: string
-          created_by: string
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          id?: string
-          name: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          id?: string
-          name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "group_chats_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      group_members: {
-        Row: {
-          group_id: string
-          id: string
-          joined_at: string
-          user_id: string
-        }
-        Insert: {
-          group_id: string
-          id?: string
-          joined_at?: string
-          user_id: string
-        }
-        Update: {
-          group_id?: string
-          id?: string
-          joined_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "group_members_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "group_chats"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "group_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       likes: {
         Row: {
           comment_id: string | null
@@ -210,16 +145,19 @@ export type Database = {
       love_answers: {
         Row: {
           answers: number[]
+          started_at: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           answers?: number[]
+          started_at?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           answers?: number[]
+          started_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -237,7 +175,6 @@ export type Database = {
         Row: {
           content: string
           created_at: string
-          group_id: string | null
           id: string
           media_type: string | null
           media_url: string | null
@@ -247,7 +184,6 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
-          group_id?: string | null
           id?: string
           media_type?: string | null
           media_url?: string | null
@@ -257,7 +193,6 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
-          group_id?: string | null
           id?: string
           media_type?: string | null
           media_url?: string | null
@@ -265,13 +200,6 @@ export type Database = {
           sender_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "messages_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "group_chats"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "messages_recipient_id_fkey"
             columns: ["recipient_id"]
