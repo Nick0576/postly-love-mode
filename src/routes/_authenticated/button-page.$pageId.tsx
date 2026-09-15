@@ -12,6 +12,7 @@ import { Plus, Trash2, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, uploadMedia } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
+import { Media } from "@/components/Media";
 
 type ButtonElement = {
   id: string;
@@ -300,7 +301,7 @@ function ButtonPageEditor() {
                       }}
                     />
                     {element.content.url && (
-                      <img src={element.content.url} alt="Uploaded" className="max-w-full h-32 object-cover rounded" />
+                      <Media path={element.content.url} className="max-w-full h-32 object-cover rounded" />
                     )}
                     <Input
                       value={element.content.caption}
