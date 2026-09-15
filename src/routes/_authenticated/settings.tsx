@@ -1,14 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MusicPicker, type MusicPick } from "@/components/MusicPicker";
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, uploadMedia, type Profile, getChatBubbleFromStorage, saveChatBubbleToStorage } from "@/lib/postly";
+import { currentUserId, uploadMedia, type Profile, getChatBubbleFromStorage, saveChatBubbleToStorage, unblockUser, getBlockedUsers } from "@/lib/postly";
 import { applyTheme, getTheme, setTheme, type Theme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 function SettingsPage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [theme, setThemeState] = useState<Theme>("light");
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
@@ -73,6 +75,28 @@ function SettingsPage() {
         setError(e instanceof Error ? e.message : String(e));
         throw e;
       }
+    },
+  });
+
+  const { data: blockedUsers } = useQuery({
+    queryKey: ["blocked-users"],
+    queryFn: async () => {
+      const blockedIds = await getBlockedUsers();
+      if (blockedIds.length === 0) return [];
+      const { data } = await supabase
+        .from("profiles")
+        .select("id,username,display_name,avatar_url")
+        .in("id", blockedIds);
+      return data ?? [];
+    },
+  });
+
+  const unblockMutation = useMutation({
+    mutationFn: async (blockedUserId: string) => {
+      await unblockUser(blockedUserId);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["blocked-users"] });
     },
   });
 
@@ -245,6 +269,32 @@ function SettingsPage() {
             When ON, your profile visits are recorded and you can see who viewed your profile. When OFF, your visits are not recorded and you cannot see who viewed your profile.
           </p>
           <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
+        </section>
+
+        <section className="space-y-3 rounded-2xl border p-4">
+          <h2 className="font-semibold">Blocked Accounts</h2>
+          {blockedUsers && blockedUsers.length > 0 ? (
+            <div className="space-y-3">
+              {blockedUsers.map((user) => (
+                <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg border">
+                  <Avatar url={user.avatar_url} name={user.display_name} size={40} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{user.display_name || user.username}</p>
+                    <p className="text-sm text-muted-foreground">@{user.username}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => unblockMutation.mutate(user.id)}
+                  >
+                    Unblock
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No blocked accounts</p>
+          )}
         </section>
 
         <section className="space-y-3 rounded-2xl border p-4">
