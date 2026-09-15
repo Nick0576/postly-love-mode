@@ -60,7 +60,7 @@ function Chat() {
 
   useEffect(() => {
     applyTheme(getTheme());
-    setChatBg(getChatBackground(userId));
+    getChatBackground("dm", userId).then(setChatBg);
   }, []);
 
   const { data } = useQuery({
@@ -316,7 +316,7 @@ function Chat() {
                 type="button"
                 onClick={() => {
                   setChatBg(bg.path);
-                  saveChatBackground(userId, bg.path);
+                  void saveChatBackground("dm", userId, bg.path);
                   setShowBgPicker(false);
                 }}
                 className={`relative overflow-hidden rounded-lg border-2 transition-all aspect-square ${

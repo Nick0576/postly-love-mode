@@ -347,8 +347,7 @@ export async function isUserBlocked(blockedUserId: string): Promise<boolean> {
   return !!data;
 }
 
-// Chat background utilities (per-conversation)
-const CHAT_BG_PREFIX = "postly-chat-bg-";
+// Chat background utilities (per-conversation, database-backed)
 export const CHAT_BACKGROUNDS = [
   { id: "default", label: "Default", path: null },
   { id: "bg1", label: "Background 1", path: "/chat-backgrounds/bg1.jpg" },
@@ -361,21 +360,35 @@ export const CHAT_BACKGROUNDS = [
   { id: "bg8", label: "Background 8", path: "/chat-backgrounds/bg8.jpg" },
 ] as const;
 
-export function getChatBackground(chatId: string): string | null {
-  if (typeof localStorage === "undefined") return null;
-  try {
-    return localStorage.getItem(CHAT_BG_PREFIX + chatId);
-  } catch {
-    return null;
-  }
+export async function getChatBackground(
+  conversationType: "dm" | "group",
+  conversationId: string,
+): Promise<string | null> {
+  const uid = await currentUserId();
+  const { data } = await (supabase as any)
+    .from("chat_backgrounds")
+    .select("background_path")
+    .eq("user_id", uid)
+    .eq("conversation_type", conversationType)
+    .eq("conversation_id", conversationId)
+    .maybeSingle();
+  return data?.background_path ?? null;
 }
 
-export function saveChatBackground(chatId: string, path: string | null): void {
-  if (typeof localStorage === "undefined") return;
-  const key = CHAT_BG_PREFIX + chatId;
-  if (path) {
-    localStorage.setItem(key, path);
-  } else {
-    localStorage.removeItem(key);
-  }
+export async function saveChatBackground(
+  conversationType: "dm" | "group",
+  conversationId: string,
+  backgroundPath: string | null,
+): Promise<void> {
+  const uid = await currentUserId();
+  const { error } = await (supabase as any).from("chat_backgrounds").upsert(
+    {
+      user_id: uid,
+      conversation_type: conversationType,
+      conversation_id: conversationId,
+      background_path: backgroundPath,
+    },
+    { onConflict: "user_id,conversation_type,conversation_id" },
+  );
+  if (error) throw error;
 }

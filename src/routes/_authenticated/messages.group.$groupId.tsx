@@ -45,7 +45,7 @@ function GroupChat() {
 
   useEffect(() => {
     applyTheme(getTheme());
-    setChatBg(getChatBackground(groupId));
+    getChatBackground("group", groupId).then(setChatBg);
   }, []);
 
   const { data } = useQuery({
@@ -323,7 +323,7 @@ function GroupChat() {
                 type="button"
                 onClick={() => {
                   setChatBg(bg.path);
-                  saveChatBackground(groupId, bg.path);
+                  void saveChatBackground("group", groupId, bg.path);
                   setShowBgPicker(false);
                 }}
                 className={`relative overflow-hidden rounded-lg border-2 transition-all aspect-square ${
