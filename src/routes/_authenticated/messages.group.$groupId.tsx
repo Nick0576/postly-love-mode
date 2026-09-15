@@ -342,11 +342,10 @@ function GroupChat() {
           </div>
         </div>
       )}
-      <div className="relative min-h-[50vh]">
-        {chatBg && (
-          <img src={chatBg} alt="" className="absolute inset-0 h-full w-full object-cover" aria-hidden="true" />
-        )}
-        <div className="relative z-10 space-y-2">
+      {chatBg && (
+        <img src={chatBg} alt="" className="fixed inset-0 z-0 h-full w-full object-cover" aria-hidden="true" />
+      )}
+      <div className="relative z-[1] space-y-2">
         {data?.msgs.map((m) => (
           <div
             key={m.id}
@@ -401,7 +400,6 @@ function GroupChat() {
           </div>
         ))}
         {data && !data.msgs.length && <p className="text-sm text-muted-foreground">No messages yet. Say hello!</p>}
-      </div>
       </div>
       <div className="fixed inset-x-0 bottom-16 mx-auto flex max-w-xl gap-2 bg-background px-4 py-3">
         {isRecording ? (

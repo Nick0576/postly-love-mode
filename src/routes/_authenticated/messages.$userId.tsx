@@ -335,11 +335,10 @@ function Chat() {
           </div>
         </div>
       )}
-      <div className="relative min-h-[50vh]">
-        {chatBg && (
-          <img src={chatBg} alt="" className="absolute inset-0 h-full w-full object-cover" aria-hidden="true" />
-        )}
-        <div className="relative z-10 space-y-2">
+      {chatBg && (
+        <img src={chatBg} alt="" className="fixed inset-0 z-0 h-full w-full object-cover" aria-hidden="true" />
+      )}
+      <div className="relative z-[1] space-y-2">
         {data?.msgs.map((m) => (
           <div
             key={m.id}
@@ -402,7 +401,6 @@ function Chat() {
           </div>
         ))}
         {data && !data.msgs.length && <p className="text-sm text-muted-foreground">Say hello.</p>}
-      </div>
       </div>
       {showGifs && data && (
         <GifPicker customerId={data.me} onPick={(g) => void sendGif(g.url)} />

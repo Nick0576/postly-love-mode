@@ -58,16 +58,20 @@ function Chats() {
         directChats = (people ?? []).map((p) => ({ profile: p as Profile, last: seen.get(p.id)! }));
       }
       
-      // Get group chats
-      const { data: groupData } = await (supabase as any)
-        .from("group_members")
-        .select("group_id,group_chats(*)")
-        .eq("user_id", me);
-      
-      const groups: { group: GroupChat; groupId: string }[] = (groupData ?? []).map((g: any) => ({
-        group: g.group_chats as GroupChat,
-        groupId: g.group_id as string,
-      }));
+      // Get group chats (gracefully handle missing tables)
+      let groups: { group: GroupChat; groupId: string }[] = [];
+      try {
+        const { data: groupData } = await (supabase as any)
+          .from("group_members")
+          .select("group_id,group_chats(*)")
+          .eq("user_id", me);
+        groups = (groupData ?? []).map((g: any) => ({
+          group: g.group_chats as GroupChat,
+          groupId: g.group_id as string,
+        }));
+      } catch {
+        // Group tables may not exist yet
+      }
       
       return { directChats, groups };
     },

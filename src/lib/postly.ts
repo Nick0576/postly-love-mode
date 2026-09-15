@@ -373,7 +373,8 @@ export function setChatMeta(id: string, patch: Partial<{ unread: boolean; muted:
   }
 }
 
-// Chat background utilities (per-conversation, database-backed)
+// Chat background utilities (per-conversation, DB + localStorage fallback)
+const CHAT_BG_LS_PREFIX = "postly-chat-bg-";
 export const CHAT_BACKGROUNDS = [
   { id: "default", label: "Default", path: null },
   { id: "bg1", label: "Background 1", path: "/chat-backgrounds/bg1.jpg" },
@@ -386,19 +387,38 @@ export const CHAT_BACKGROUNDS = [
   { id: "bg8", label: "Background 8", path: "/chat-backgrounds/bg8.jpg" },
 ] as const;
 
+function getChatBackgroundLocal(key: string): string | null {
+  if (typeof localStorage === "undefined") return null;
+  try { return localStorage.getItem(CHAT_BG_LS_PREFIX + key); } catch { return null; }
+}
+
+function setChatBackgroundLocal(key: string, path: string | null): void {
+  if (typeof localStorage === "undefined") return;
+  const fullKey = CHAT_BG_LS_PREFIX + key;
+  if (path) localStorage.setItem(fullKey, path);
+  else localStorage.removeItem(fullKey);
+}
+
 export async function getChatBackground(
   conversationType: "dm" | "group",
   conversationId: string,
 ): Promise<string | null> {
-  const uid = await currentUserId();
-  const { data } = await (supabase as any)
-    .from("chat_backgrounds")
-    .select("background_path")
-    .eq("user_id", uid)
-    .eq("conversation_type", conversationType)
-    .eq("conversation_id", conversationId)
-    .maybeSingle();
-  return data?.background_path ?? null;
+  const lsKey = `${conversationType}-${conversationId}`;
+  try {
+    const uid = await currentUserId();
+    const { data } = await (supabase as any)
+      .from("chat_backgrounds")
+      .select("background_path")
+      .eq("user_id", uid)
+      .eq("conversation_type", conversationType)
+      .eq("conversation_id", conversationId)
+      .maybeSingle();
+    const dbPath = data?.background_path ?? null;
+    if (dbPath !== getChatBackgroundLocal(lsKey)) setChatBackgroundLocal(lsKey, dbPath);
+    return dbPath;
+  } catch {
+    return getChatBackgroundLocal(lsKey);
+  }
 }
 
 export async function saveChatBackground(
@@ -406,15 +426,21 @@ export async function saveChatBackground(
   conversationId: string,
   backgroundPath: string | null,
 ): Promise<void> {
-  const uid = await currentUserId();
-  const { error } = await (supabase as any).from("chat_backgrounds").upsert(
-    {
-      user_id: uid,
-      conversation_type: conversationType,
-      conversation_id: conversationId,
-      background_path: backgroundPath,
-    },
-    { onConflict: "user_id,conversation_type,conversation_id" },
-  );
-  if (error) throw error;
+  const lsKey = `${conversationType}-${conversationId}`;
+  setChatBackgroundLocal(lsKey, backgroundPath);
+  try {
+    const uid = await currentUserId();
+    const { error } = await (supabase as any).from("chat_backgrounds").upsert(
+      {
+        user_id: uid,
+        conversation_type: conversationType,
+        conversation_id: conversationId,
+        background_path: backgroundPath,
+      },
+      { onConflict: "user_id,conversation_type,conversation_id" },
+    );
+    if (error) throw error;
+  } catch {
+    // localStorage fallback already saved
+  }
 }
