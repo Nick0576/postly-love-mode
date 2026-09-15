@@ -70,6 +70,7 @@ function SearchPage() {
 
   return (
     <AppShell title="Discover">
+      <AnnouncementBanner />
       <Input
         value={q}
         onChange={(e) => setQ(e.target.value)}

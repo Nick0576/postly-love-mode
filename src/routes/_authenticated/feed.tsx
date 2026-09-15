@@ -197,6 +197,7 @@ function Feed() {
 
   return (
     <AppShell title="Postly">
+      <AnnouncementBanner />
       <div className="space-y-4">
         {/* Stories Section */}
         {stories && stories.length > 0 && (
