@@ -96,9 +96,10 @@ function ProfilePage() {
       }
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Block mutation error:", error);
-      alert("Failed to block user: " + (error instanceof Error ? error.message : String(error)));
+      const errorMessage = error?.message || error?.error?.message || JSON.stringify(error);
+      alert("Failed to block user: " + errorMessage);
     },
   });
 
@@ -113,9 +114,10 @@ function ProfilePage() {
       }
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Unblock mutation error:", error);
-      alert("Failed to unblock user: " + (error instanceof Error ? error.message : String(error)));
+      const errorMessage = error?.message || error?.error?.message || JSON.stringify(error);
+      alert("Failed to unblock user: " + errorMessage);
     },
   });
 
