@@ -55,7 +55,7 @@ function Feed() {
     queryFn: async ({ pageParam }) => {
       const { data, error } = await supabase
         .from("posts")
-        .select(`${POST_SELECT},buttons(*)`)
+        .select(POST_SELECT)
         .order("created_at", { ascending: false })
         .range(pageParam, pageParam + PAGE - 1);
       if (error) throw error;
@@ -256,7 +256,6 @@ function Feed() {
           <PostCard
             key={p.id}
             post={p}
-            button={(p as any).buttons?.[0]}
             onDelete={
               p.user_id === me
                 ? () => {
