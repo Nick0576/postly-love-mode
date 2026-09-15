@@ -45,3 +45,7 @@ BEGIN
   WHERE blocker_id = auth.uid() AND blocked_id = blocked_user_id;
 END;
 $$;
+
+-- Grant execute permissions
+GRANT EXECUTE ON FUNCTION public.block_user(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.unblock_user(uuid) TO authenticated;
