@@ -4,9 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mic, Video, Send, X, Users, MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { Mic, Video, Send, X, Users, MoreVertical, Edit2, Trash2, Palette } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, uploadMedia, signedUrl, type Profile, type GroupChat, getGroupMembers, addGroupMember, renameGroupChat, deleteGroupChat, editMessage, getChatBackground } from "@/lib/postly";
+import { currentUserId, uploadMedia, signedUrl, type Profile, type GroupChat, getGroupMembers, addGroupMember, renameGroupChat, deleteGroupChat, editMessage, getChatBackground, saveChatBackground, CHAT_BACKGROUNDS } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 
 type Msg = { id: string; sender_id: string; content: string; media_url: string | null; media_type: string | null; created_at: string; profiles: Profile | null };
@@ -41,10 +41,11 @@ function GroupChat() {
   const chunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<number | null>(null);
   const [chatBg, setChatBg] = useState<string | null>(null);
+  const [showBgPicker, setShowBgPicker] = useState(false);
 
   useEffect(() => {
     applyTheme(getTheme());
-    setChatBg(getChatBackground());
+    setChatBg(getChatBackground(groupId));
   }, []);
 
   const { data } = useQuery({
@@ -254,6 +255,9 @@ function GroupChat() {
       title={data?.group?.name || "Group Chat"}
       headerAction={
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => setShowBgPicker(!showBgPicker)}>
+            <Palette className="h-5 w-5" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={() => setShowMembers(!showMembers)}>
             <Users className="h-5 w-5" />
           </Button>
@@ -305,6 +309,35 @@ function GroupChat() {
                 <span>{member.profiles?.display_name || member.profiles?.username}</span>
                 {member.user_id === data.me && <span className="text-xs text-muted-foreground">(You)</span>}
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {showBgPicker && (
+        <div className="mb-4 p-3 rounded-xl border space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground">Chat Background</p>
+          <div className="grid grid-cols-5 gap-2">
+            {CHAT_BACKGROUNDS.map((bg) => (
+              <button
+                key={bg.id}
+                type="button"
+                onClick={() => {
+                  setChatBg(bg.path);
+                  saveChatBackground(groupId, bg.path);
+                  setShowBgPicker(false);
+                }}
+                className={`relative overflow-hidden rounded-lg border-2 transition-all aspect-square ${
+                  chatBg === bg.path ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"
+                }`}
+              >
+                {bg.path ? (
+                  <img src={bg.path} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background text-[10px] font-medium text-muted-foreground">
+                    Default
+                  </div>
+                )}
+              </button>
             ))}
           </div>
         </div>

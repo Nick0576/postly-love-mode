@@ -347,8 +347,8 @@ export async function isUserBlocked(blockedUserId: string): Promise<boolean> {
   return !!data;
 }
 
-// Chat background utilities
-const CHAT_BG_KEY = "postly-chat-background";
+// Chat background utilities (per-conversation)
+const CHAT_BG_PREFIX = "postly-chat-bg-";
 export const CHAT_BACKGROUNDS = [
   { id: "default", label: "Default", path: null },
   { id: "bg1", label: "Background 1", path: "/chat-backgrounds/bg1.jpg" },
@@ -361,20 +361,21 @@ export const CHAT_BACKGROUNDS = [
   { id: "bg8", label: "Background 8", path: "/chat-backgrounds/bg8.jpg" },
 ] as const;
 
-export function getChatBackground(): string | null {
+export function getChatBackground(chatId: string): string | null {
   if (typeof localStorage === "undefined") return null;
   try {
-    return localStorage.getItem(CHAT_BG_KEY);
+    return localStorage.getItem(CHAT_BG_PREFIX + chatId);
   } catch {
     return null;
   }
 }
 
-export function saveChatBackground(path: string | null): void {
+export function saveChatBackground(chatId: string, path: string | null): void {
   if (typeof localStorage === "undefined") return;
+  const key = CHAT_BG_PREFIX + chatId;
   if (path) {
-    localStorage.setItem(CHAT_BG_KEY, path);
+    localStorage.setItem(key, path);
   } else {
-    localStorage.removeItem(CHAT_BG_KEY);
+    localStorage.removeItem(key);
   }
 }
