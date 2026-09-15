@@ -144,36 +144,36 @@ export function isStoryExpired(story: Story): boolean {
   return new Date(story.expires_at) < new Date();
 }
 
-// Group chat utilities
+// Group chat utilities (cast to any because generated types don't include group tables)
 export async function createGroupChat(name: string): Promise<string> {
   const uid = await currentUserId();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("group_chats")
     .insert({ name, created_by: uid })
     .select("id")
     .single();
   if (error) throw error;
   // Add creator as first member
-  await supabase.from("group_members").insert({ group_id: data.id, user_id: uid });
+  await (supabase as any).from("group_members").insert({ group_id: data.id, user_id: uid });
   return data.id;
 }
 
 export async function addGroupMember(groupId: string, userId: string): Promise<void> {
-  const { error } = await supabase.from("group_members").insert({ group_id: groupId, user_id: userId });
+  const { error } = await (supabase as any).from("group_members").insert({ group_id: groupId, user_id: userId });
   if (error) throw error;
 }
 
 export async function getGroupMembers(groupId: string): Promise<GroupMember[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("group_members")
     .select("*,profiles(*)")
     .eq("group_id", groupId);
   if (error) throw error;
-  return data as GroupMember[];
+  return (data ?? []) as GroupMember[];
 }
 
 export async function getGroupChat(groupId: string): Promise<GroupChat | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("group_chats")
     .select("*")
     .eq("id", groupId)
@@ -183,7 +183,7 @@ export async function getGroupChat(groupId: string): Promise<GroupChat | null> {
 }
 
 export async function renameGroupChat(groupId: string, name: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("group_chats")
     .update({ name })
     .eq("id", groupId);
@@ -191,7 +191,7 @@ export async function renameGroupChat(groupId: string, name: string): Promise<vo
 }
 
 export async function deleteGroupChat(groupId: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("group_chats")
     .delete()
     .eq("id", groupId);

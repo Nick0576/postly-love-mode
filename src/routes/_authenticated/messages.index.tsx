@@ -55,7 +55,7 @@ function Chats() {
       }
       
       // Get group chats
-      const { data: groupData } = await supabase
+      const { data: groupData } = await (supabase as any)
         .from("group_members")
         .select("group_id,group_chats(*)")
         .eq("user_id", me);
