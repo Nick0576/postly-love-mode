@@ -88,17 +88,35 @@ function ProfilePage() {
   const blockMutation = useMutation({
     mutationFn: async () => {
       if (!data) return;
-      await blockUser(data.profile.id);
+      try {
+        await blockUser(data.profile.id);
+      } catch (error) {
+        console.error("Block error:", error);
+        throw error;
+      }
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
+    onError: (error) => {
+      console.error("Block mutation error:", error);
+      alert("Failed to block user: " + (error instanceof Error ? error.message : String(error)));
+    },
   });
 
   const unblockMutation = useMutation({
     mutationFn: async () => {
       if (!data) return;
-      await unblockUser(data.profile.id);
+      try {
+        await unblockUser(data.profile.id);
+      } catch (error) {
+        console.error("Unblock error:", error);
+        throw error;
+      }
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
+    onError: (error) => {
+      console.error("Unblock mutation error:", error);
+      alert("Failed to unblock user: " + (error instanceof Error ? error.message : String(error)));
+    },
   });
 
   const remove = useMutation({
