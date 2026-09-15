@@ -144,36 +144,36 @@ export function isStoryExpired(story: Story): boolean {
   return new Date(story.expires_at) < new Date();
 }
 
-// Group chat utilities
+// Group chat utilities (cast to any because generated types don't include group tables)
 export async function createGroupChat(name: string): Promise<string> {
   const uid = await currentUserId();
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("group_chats")
     .insert({ name, created_by: uid })
     .select("id")
     .single();
   if (error) throw error;
   // Add creator as first member
-  await supabase.from("group_members").insert({ group_id: data.id, user_id: uid });
+  await (supabase as any).from("group_members").insert({ group_id: data.id, user_id: uid });
   return data.id;
 }
 
 export async function addGroupMember(groupId: string, userId: string): Promise<void> {
-  const { error } = await supabase.from("group_members").insert({ group_id: groupId, user_id: userId });
+  const { error } = await (supabase as any).from("group_members").insert({ group_id: groupId, user_id: userId });
   if (error) throw error;
 }
 
 export async function getGroupMembers(groupId: string): Promise<GroupMember[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("group_members")
     .select("*,profiles(*)")
     .eq("group_id", groupId);
   if (error) throw error;
-  return data as GroupMember[];
+  return (data ?? []) as GroupMember[];
 }
 
 export async function getGroupChat(groupId: string): Promise<GroupChat | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("group_chats")
     .select("*")
     .eq("id", groupId)
@@ -183,7 +183,7 @@ export async function getGroupChat(groupId: string): Promise<GroupChat | null> {
 }
 
 export async function renameGroupChat(groupId: string, name: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("group_chats")
     .update({ name })
     .eq("id", groupId);
@@ -191,7 +191,7 @@ export async function renameGroupChat(groupId: string, name: string): Promise<vo
 }
 
 export async function deleteGroupChat(groupId: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("group_chats")
     .delete()
     .eq("id", groupId);
@@ -267,6 +267,50 @@ export async function cleanupOldProfileViews(): Promise<void> {
     .from("profile_views")
     .delete()
     .lt("viewed_at", thirtyDaysAgo);
+  if (error) throw error;
+}
+
+// Blocking utilities (types not generated for `blocks` yet)
+export async function getBlockedIds(): Promise<string[]> {
+  const uid = await currentUserId();
+  const { data } = await (supabase as any)
+    .from("blocks")
+    .select("blocker_id,blocked_id")
+    .or(`blocker_id.eq.${uid},blocked_id.eq.${uid}`);
+  return ((data ?? []) as { blocker_id: string; blocked_id: string }[]).map((b) =>
+    b.blocker_id === uid ? b.blocked_id : b.blocker_id,
+  );
+}
+
+export async function isBlocked(otherId: string): Promise<boolean> {
+  const uid = await currentUserId();
+  const { data } = await (supabase as any)
+    .from("blocks")
+    .select("blocker_id")
+    .eq("blocker_id", uid)
+    .eq("blocked_id", otherId)
+    .maybeSingle();
+  return !!data;
+}
+
+export async function blockUser(otherId: string): Promise<void> {
+  const uid = await currentUserId();
+  const { error } = await (supabase as any)
+    .from("blocks")
+    .insert({ blocker_id: uid, blocked_id: otherId });
+  if (error) throw error;
+  // Remove any follow relationship in both directions
+  await supabase.from("follows").delete().eq("follower_id", uid).eq("following_id", otherId);
+  await supabase.from("follows").delete().eq("follower_id", otherId).eq("following_id", uid);
+}
+
+export async function unblockUser(otherId: string): Promise<void> {
+  const uid = await currentUserId();
+  const { error } = await (supabase as any)
+    .from("blocks")
+    .delete()
+    .eq("blocker_id", uid)
+    .eq("blocked_id", otherId);
   if (error) throw error;
 }
 

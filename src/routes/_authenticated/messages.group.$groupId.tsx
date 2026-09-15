@@ -50,13 +50,13 @@ function GroupChat() {
     queryFn: async () => {
       const me = await currentUserId();
       const [msgs, group, members] = await Promise.all([
-        supabase
+        (supabase as any)
           .from("messages")
           .select("id,sender_id,content,media_url,media_type,created_at,profiles(*)")
           .eq("group_id", groupId)
           .order("created_at", { ascending: true })
           .limit(100),
-        supabase.from("group_chats").select("*").eq("id", groupId).maybeSingle(),
+        (supabase as any).from("group_chats").select("*").eq("id", groupId).maybeSingle(),
         getGroupMembers(groupId),
       ]);
       return { me, msgs: (msgs.data ?? []) as unknown as Msg[], group: (group.data ?? null) as GroupChat | null, members };

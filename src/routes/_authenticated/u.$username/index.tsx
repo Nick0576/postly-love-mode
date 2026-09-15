@@ -393,7 +393,7 @@ function ProfilePage() {
                 <div className="w-full">
                   <YouTubeMusicPlayer 
                     videoId={data.profile.chat_bubble_music_video_id}
-                    title={data.profile.chat_bubble_music_title}
+                    title={data.profile.chat_bubble_music_title ?? null}
                     autoplay={true}
                   />
                 </div>

@@ -13,7 +13,7 @@ const items = [
   { to: "/settings", label: "Settings", Icon: Settings },
 ] as const;
 
-export function AppShell({ title, children, headerAction }: { title: string; children: ReactNode; headerAction?: ReactNode }) {
+export function AppShell({ title, children, headerAction }: { title: ReactNode; children: ReactNode; headerAction?: ReactNode }) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const startY = useRef(0);
