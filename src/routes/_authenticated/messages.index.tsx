@@ -60,9 +60,9 @@ function Chats() {
         .select("group_id,group_chats(*)")
         .eq("user_id", me);
       
-      const groups = (groupData ?? []).map((g: any) => ({
+      const groups: { group: GroupChat; groupId: string }[] = (groupData ?? []).map((g: any) => ({
         group: g.group_chats as GroupChat,
-        groupId: g.group_id
+        groupId: g.group_id as string,
       }));
       
       return { directChats, groups };

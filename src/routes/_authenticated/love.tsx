@@ -248,11 +248,14 @@ function Love() {
             <Button className="w-full" onClick={() => void saveAll(answers)}>
               Save answers
             </Button>
-            {saved && (data?.matches?.length ?? 0) > 0 && data && (
+            {saved && data && data.matches.length > 0 && (
               <Button 
                 className="w-full" 
                 variant="outline"
-                onClick={() => navigate({ to: "/messages/$userId", params: { userId: data.matches[0].profile.id } })}
+                onClick={() => {
+                  const match = data.matches[0];
+                  if (match) navigate({ to: "/messages/$userId", params: { userId: match.profile.id } });
+                }}
               >
                 Go to chat to see results
               </Button>
