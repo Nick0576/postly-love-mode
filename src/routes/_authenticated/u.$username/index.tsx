@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/PostCard";
 import { YouTubeMusicPlayer } from "@/components/YouTubeMusicPlayer";
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, signedUrl, type Profile, isUserOnline, recordProfileView, getProfileViews, timeAgo, cleanupOldProfileViews } from "@/lib/postly";
+import { currentUserId, signedUrl, type Profile, isUserOnline, recordProfileView, getProfileViews, timeAgo, cleanupOldProfileViews, isBlocked, blockUser, unblockUser } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 import type { PostRow } from "@/lib/postly";
 import { POST_SELECT } from "@/lib/postly";
