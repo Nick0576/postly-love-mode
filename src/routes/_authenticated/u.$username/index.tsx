@@ -68,7 +68,7 @@ function ProfilePage() {
         followersCount: followers?.data?.length ?? 0,
         followsBack: followsBack?.data?.length > 0,
         loveMatch,
-        isBlocked: !!blocked
+        isBlocked: !!blocked?.data
       };
     },
   });
