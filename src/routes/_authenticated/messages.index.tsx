@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
@@ -24,9 +24,54 @@ export const Route = createFileRoute("/_authenticated/messages/")({
 });
 
 function Chats() {
+  const qc = useQueryClient();
+
   useEffect(() => {
     applyTheme(getTheme());
   }, []);
+
+  const { data } = useQuery({
+    queryKey: ["chats"],
+    queryFn: async () => {
+      const me = await currentUserId();
+      
+      // Get direct messages
+      const { data: msgs } = await supabase
+        .from("messages")
+        .select("sender_id,recipient_id,content,created_at")
+        .is("group_id", null)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      const seen = new Map<string, { content: string; created_at: string }>();
+      for (const m of msgs ?? []) {
+        const other = m.sender_id === me ? m.recipient_id : m.sender_id;
+        if (!seen.has(other)) seen.set(other, { content: m.content, created_at: m.created_at });
+      }
+      const ids = [...seen.keys()];
+      
+      let directChats: { profile: Profile; last: { content: string; created_at: string } }[] = [];
+      if (ids.length) {
+        const { data: people } = await supabase
+          .from("profiles")
+          .select("id,username,display_name,bio,avatar_url")
+          .in("id", ids);
+        directChats = (people ?? []).map((p) => ({ profile: p as Profile, last: seen.get(p.id)! }));
+      }
+      
+      // Get group chats
+      const { data: groupData } = await (supabase as any)
+        .from("group_members")
+        .select("group_id,group_chats(*)")
+        .eq("user_id", me);
+      
+      const groups: { group: GroupChat; groupId: string }[] = (groupData ?? []).map((g: any) => ({
+        group: g.group_chats as GroupChat,
+        groupId: g.group_id as string,
+      }));
+      
+      return { directChats, groups };
+    },
+  });
 
   const [metaMap, setMetaMap] = useState<Record<string, ConversationMeta>>({});
 
@@ -71,64 +116,25 @@ function Chats() {
         const label = kind === "group" ? "this group chat" : "this conversation";
         if (!confirm(`Delete ${label}? This cannot be undone.`)) return;
         (async () => {
-          if (kind === "group") {
-            await deleteGroupChat(id);
-          } else {
-            const me = await currentUserId();
-            await supabase.from("messages").delete().or(
-              `and(sender_id.eq.${me},recipient_id.eq.${id}),and(sender_id.eq.${id},recipient_id.eq.${me})`
-            );
+          try {
+            if (kind === "group") {
+              await deleteGroupChat(id);
+            } else {
+              const me = await currentUserId();
+              await supabase.from("messages").delete().or(
+                `and(sender_id.eq.${me},recipient_id.eq.${id}),and(sender_id.eq.${id},recipient_id.eq.${me})`
+              );
+            }
+            toast.success("Deleted");
+            void qc.invalidateQueries({ queryKey: ["chats"] });
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Failed to delete");
           }
-          toast.success("Deleted");
-          void qc.invalidateQueries({ queryKey: ["chats"] });
         })();
         break;
       }
     }
   }
-
-  const { data } = useQuery({
-    queryKey: ["chats"],
-    queryFn: async () => {
-      const me = await currentUserId();
-      
-      // Get direct messages
-      const { data: msgs } = await supabase
-        .from("messages")
-        .select("sender_id,recipient_id,content,created_at")
-        .is("group_id", null)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      const seen = new Map<string, { content: string; created_at: string }>();
-      for (const m of msgs ?? []) {
-        const other = m.sender_id === me ? m.recipient_id : m.sender_id;
-        if (!seen.has(other)) seen.set(other, { content: m.content, created_at: m.created_at });
-      }
-      const ids = [...seen.keys()];
-      
-      let directChats: { profile: Profile; last: { content: string; created_at: string } }[] = [];
-      if (ids.length) {
-        const { data: people } = await supabase
-          .from("profiles")
-          .select("id,username,display_name,bio,avatar_url")
-          .in("id", ids);
-        directChats = (people ?? []).map((p) => ({ profile: p as Profile, last: seen.get(p.id)! }));
-      }
-      
-      // Get group chats
-      const { data: groupData } = await (supabase as any)
-        .from("group_members")
-        .select("group_id,group_chats(*)")
-        .eq("user_id", me);
-      
-      const groups: { group: GroupChat; groupId: string }[] = (groupData ?? []).map((g: any) => ({
-        group: g.group_chats as GroupChat,
-        groupId: g.group_id as string,
-      }));
-      
-      return { directChats, groups };
-    },
-  });
 
   return (
     <AppShell title="Chats" headerAction={
