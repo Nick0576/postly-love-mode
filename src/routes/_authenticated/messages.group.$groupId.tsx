@@ -314,7 +314,7 @@ function GroupChat() {
         </div>
       )}
       {showBgPicker && (
-        <div className="mb-4 p-3 rounded-xl border space-y-2">
+        <div className="relative z-[2] mb-4 p-3 rounded-xl border bg-background space-y-2">
           <p className="text-xs font-semibold text-muted-foreground">Chat Background</p>
           <div className="grid grid-cols-5 gap-2">
             {CHAT_BACKGROUNDS.map((bg) => (
