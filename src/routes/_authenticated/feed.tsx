@@ -7,7 +7,7 @@ import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { POST_SELECT, currentUserId, type PostRow, type Story, isStoryExpired } from "@/lib/postly";
+import { POST_SELECT, currentUserId, type PostRow, type Story, isStoryExpired, getBlockedUsers } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 
 const PAGE = 10;
@@ -40,6 +40,12 @@ function Feed() {
         .limit(20);
       return data as Story[];
     },
+  });
+
+  const { data: blockedUsers } = useQuery({
+    queryKey: ["blocked-users", me],
+    queryFn: () => me ? getBlockedUsers() : Promise.resolve([]),
+    enabled: !!me,
   });
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
@@ -165,7 +171,7 @@ function Feed() {
     return () => io.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const posts = data?.pages.flat() ?? [];
+  const posts = data?.pages.flat().filter(p => !blockedUsers?.includes(p.user_id)) ?? [];
 
   const postIds = posts.map(p => p.id);
 

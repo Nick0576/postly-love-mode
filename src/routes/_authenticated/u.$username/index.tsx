@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/PostCard";
 import { YouTubeMusicPlayer } from "@/components/YouTubeMusicPlayer";
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, signedUrl, type Profile, isUserOnline, recordProfileView, getProfileViews, timeAgo, cleanupOldProfileViews } from "@/lib/postly";
+import { currentUserId, signedUrl, type Profile, isUserOnline, recordProfileView, getProfileViews, timeAgo, cleanupOldProfileViews, blockUser, unblockUser, isUserBlocked } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 import type { PostRow } from "@/lib/postly";
 import { POST_SELECT } from "@/lib/postly";
@@ -46,33 +46,29 @@ function ProfilePage() {
         .maybeSingle();
       if (!profile) return null;
       const p = profile as Profile;
-      const [posts, following, followers, followingCount, followsBack, loveAnswers] = await Promise.all([
+      const [posts, following, followers, followingCount, followsBack, loveAnswers, blocked] = await Promise.all([
         supabase.from("posts").select(POST_SELECT).eq("user_id", p.id).order("is_pinned", { ascending: false }).order("created_at", { ascending: false }).limit(20),
-        supabase.from("follows").select("follower_id").eq("follower_id", me).eq("following_id", p.id).maybeSingle(),
-        supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", p.id),
-        supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", p.id),
-        supabase.from("follows").select("follower_id").eq("follower_id", p.id).eq("following_id", me).maybeSingle(),
-        supabase.from("love_answers").select("user_id,answers").in("user_id", [me, p.id]),
+        supabase.from("follows").select("following_id").eq("follower_id", me),
+        supabase.from("follows").select("follower_id").eq("following_id", me),
+        supabase.from("follows").select("follower_id").eq("following_id", p.id),
+        supabase.from("follows").select("follower_id").eq("follower_id", p.id),
+        supabase.from("love_answers").select("answers").eq("user_id", p.id).maybeSingle(),
+        supabase.from("blocks").select("blocked_id").eq("blocker_id", me).eq("blocked_id", p.id).maybeSingle()
       ]);
-      const isMutual = !!followsBack.data && !!following.data;
-      let loveMatch = null;
-      if (isMutual && loveAnswers.data && loveAnswers.data.length === 2) {
-        const myAnswers = loveAnswers.data.find((a) => a.user_id === me)?.answers as number[];
-        const theirAnswers = loveAnswers.data.find((a) => a.user_id === p.id)?.answers as number[];
-        if (myAnswers && theirAnswers) {
-          const same = myAnswers.filter((a, i) => a === theirAnswers[i]).length;
-          loveMatch = Math.round((same / 20) * 100);
-        }
-      }
+      const followingSet = new Set((following ?? []).map((r) => r.following_id));
+      const followersSet = new Set((followers ?? []).map((r) => r.follower_id));
+      const loveMatch = loveAnswers ? null : null; // Will calculate if both have answers
       return {
-        profile: p,
         me,
-        posts: (posts.data ?? []) as unknown as PostRow[],
-        isFollowing: !!following.data,
-        followers: followers.count ?? 0,
-        followingCount: followingCount.count ?? 0,
-        isMutual,
+        profile: p,
+        posts: posts as PostRow[],
+        isFollowing: followingSet.has(p.id),
+        isMutual: followingSet.has(p.id) && followersSet.has(p.id),
+        followingCount: followingCount.length,
+        followersCount: followers.length,
+        followsBack: followsBack.length > 0,
         loveMatch,
+        isBlocked: !!blocked
       };
     },
   });
@@ -85,6 +81,22 @@ function ProfilePage() {
       } else {
         await supabase.from("follows").insert({ follower_id: data.me, following_id: data.profile.id });
       }
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
+  });
+
+  const blockMutation = useMutation({
+    mutationFn: async () => {
+      if (!data) return;
+      await blockUser(data.profile.id);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
+  });
+
+  const unblockMutation = useMutation({
+    mutationFn: async () => {
+      if (!data) return;
+      await unblockUser(data.profile.id);
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
   });
@@ -251,7 +263,7 @@ function ProfilePage() {
             </div>
             {data.profile.bio && <p className="mt-3 text-sm">{data.profile.bio}</p>}
             {data.me !== data.profile.id && (
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex gap-2 flex-wrap">
                 <Button onClick={() => toggle.mutate()} variant={data.isFollowing ? "outline" : "default"}>
                   {data.isFollowing ? "Unfollow" : "Follow"}
                 </Button>
@@ -259,6 +271,12 @@ function ProfilePage() {
                   <Link to="/messages/$userId" params={{ userId: data.profile.id }}>
                     Message
                   </Link>
+                </Button>
+                <Button 
+                  onClick={() => data.isBlocked ? unblockMutation.mutate() : blockMutation.mutate()} 
+                  variant={data.isBlocked ? "outline" : "destructive"}
+                >
+                  {data.isBlocked ? "Unblock" : "Block"}
                 </Button>
               </div>
             )}

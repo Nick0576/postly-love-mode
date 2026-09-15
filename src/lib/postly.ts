@@ -292,3 +292,34 @@ export const LOVE_QUESTIONS = [
   "Can love exist without a relationship?",
   "Is love worth taking a risk for? ❤️",
 ] as const;
+
+// Block/Unblock utilities
+export async function blockUser(blockedUserId: string): Promise<void> {
+  const { error } = await supabase.rpc("block_user", { blocked_user_id: blockedUserId });
+  if (error) throw error;
+}
+
+export async function unblockUser(blockedUserId: string): Promise<void> {
+  const { error } = await supabase.rpc("unblock_user", { blocked_user_id: blockedUserId });
+  if (error) throw error;
+}
+
+export async function getBlockedUsers(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("blocks")
+    .select("blocked_id")
+    .eq("blocker_id", await currentUserId());
+  if (error) throw error;
+  return (data ?? []).map((b: any) => b.blocked_id);
+}
+
+export async function isUserBlocked(blockedUserId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("blocks")
+    .select("blocked_id")
+    .eq("blocker_id", await currentUserId())
+    .eq("blocked_id", blockedUserId)
+    .single();
+  if (error && error.code !== "PGRST116") throw error; // PGRST116 = not found
+  return !!data;
+}
