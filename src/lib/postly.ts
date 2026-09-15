@@ -270,6 +270,50 @@ export async function cleanupOldProfileViews(): Promise<void> {
   if (error) throw error;
 }
 
+// Blocking utilities (types not generated for `blocks` yet)
+export async function getBlockedIds(): Promise<string[]> {
+  const uid = await currentUserId();
+  const { data } = await (supabase as any)
+    .from("blocks")
+    .select("blocker_id,blocked_id")
+    .or(`blocker_id.eq.${uid},blocked_id.eq.${uid}`);
+  return ((data ?? []) as { blocker_id: string; blocked_id: string }[]).map((b) =>
+    b.blocker_id === uid ? b.blocked_id : b.blocker_id,
+  );
+}
+
+export async function isBlocked(otherId: string): Promise<boolean> {
+  const uid = await currentUserId();
+  const { data } = await (supabase as any)
+    .from("blocks")
+    .select("blocker_id")
+    .eq("blocker_id", uid)
+    .eq("blocked_id", otherId)
+    .maybeSingle();
+  return !!data;
+}
+
+export async function blockUser(otherId: string): Promise<void> {
+  const uid = await currentUserId();
+  const { error } = await (supabase as any)
+    .from("blocks")
+    .insert({ blocker_id: uid, blocked_id: otherId });
+  if (error) throw error;
+  // Remove any follow relationship in both directions
+  await supabase.from("follows").delete().eq("follower_id", uid).eq("following_id", otherId);
+  await supabase.from("follows").delete().eq("follower_id", otherId).eq("following_id", uid);
+}
+
+export async function unblockUser(otherId: string): Promise<void> {
+  const uid = await currentUserId();
+  const { error } = await (supabase as any)
+    .from("blocks")
+    .delete()
+    .eq("blocker_id", uid)
+    .eq("blocked_id", otherId);
+  if (error) throw error;
+}
+
 export const LOVE_QUESTIONS = [
   "Do you believe in true love?",
   "Do you believe love can last forever?",
