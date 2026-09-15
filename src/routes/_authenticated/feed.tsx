@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { PostCard } from "@/components/PostCard";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
@@ -196,6 +197,7 @@ function Feed() {
 
   return (
     <AppShell title="Postly">
+      <AnnouncementBanner />
       <div className="space-y-4">
         {/* Stories Section */}
         {stories && stories.length > 0 && (
