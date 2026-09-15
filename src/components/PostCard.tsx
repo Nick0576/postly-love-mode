@@ -12,7 +12,15 @@ import { timeAgo, type PostRow } from "@/lib/postly";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 
-export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, isPinned, onTogglePin, onEdit }: {
+type ButtonData = {
+  id: string;
+  name: string;
+  icon: string;
+  appearance: { color: string; style: string };
+  button_page_id: string;
+};
+
+export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, isPinned, onTogglePin, onEdit, button }: {
   post: PostRow;
   onDelete?: (() => void) | undefined;
   hasLiked?: boolean | undefined;
@@ -21,6 +29,7 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
   isPinned?: boolean | undefined;
   onTogglePin?: (() => void) | undefined;
   onEdit?: (() => void | Promise<void>) | undefined;
+  button?: ButtonData | undefined;
 }) {
   const author = post.profiles;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -172,6 +181,32 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
       </div>
       <p className="mt-3 whitespace-pre-wrap break-words text-[0.95rem]">{post.content}</p>
       <Media path={post.media_url} />
+      
+      {/* Button Attachment */}
+      {button && (
+        <div className="mt-3">
+          <Link
+            to="/view-button-page/$pageId"
+            params={{ pageId: button.button_page_id }}
+          >
+            <Button
+              variant={button.appearance.style === "outline" ? "outline" : "default"}
+              className={`w-full ${
+                button.appearance.color === "blue" ? "bg-blue-500 hover:bg-blue-600" :
+                button.appearance.color === "green" ? "bg-green-500 hover:bg-green-600" :
+                button.appearance.color === "red" ? "bg-red-500 hover:bg-red-600" :
+                button.appearance.color === "purple" ? "bg-purple-500 hover:bg-purple-600" :
+                button.appearance.color === "orange" ? "bg-orange-500 hover:bg-orange-600" :
+                ""
+              }`}
+            >
+              {button.icon && <span className="mr-2">{button.icon}</span>}
+              {button.name}
+            </Button>
+          </Link>
+        </div>
+      )}
+      
       <div className="mt-3 flex items-center gap-4">
         <button
           type="button"
