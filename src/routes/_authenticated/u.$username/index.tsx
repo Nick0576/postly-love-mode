@@ -55,18 +55,18 @@ function ProfilePage() {
         supabase.from("love_answers").select("answers").eq("user_id", p.id).maybeSingle(),
         supabase.from("blocks").select("blocked_id").eq("blocker_id", me).eq("blocked_id", p.id).maybeSingle()
       ]);
-      const followingSet = new Set((following ?? []).map((r) => r.following_id));
-      const followersSet = new Set((followers ?? []).map((r) => r.follower_id));
+      const followingSet = new Set((following?.data ?? []).map((r) => r.following_id));
+      const followersSet = new Set((followers?.data ?? []).map((r) => r.follower_id));
       const loveMatch = loveAnswers ? null : null; // Will calculate if both have answers
       return {
         me,
         profile: p,
-        posts: posts as PostRow[],
+        posts: (posts?.data ?? []) as PostRow[],
         isFollowing: followingSet.has(p.id),
         isMutual: followingSet.has(p.id) && followersSet.has(p.id),
-        followingCount: followingCount.length,
-        followersCount: followers.length,
-        followsBack: followsBack.length > 0,
+        followingCount: followingCount?.data?.length ?? 0,
+        followersCount: followers?.data?.length ?? 0,
+        followsBack: followsBack?.data?.length > 0,
         loveMatch,
         isBlocked: !!blocked
       };
