@@ -414,7 +414,7 @@ function Chat() {
           ))}
         </div>
       )}
-      <div className="fixed inset-x-0 bottom-16 mx-auto flex max-w-xl flex-col gap-2 bg-background px-4 py-3">
+      <div className="fixed inset-x-0 bottom-16 z-10 mx-auto flex max-w-xl flex-col gap-2 bg-background px-4 py-3">
         <div className="flex gap-2">
           <input
             ref={fileRef}

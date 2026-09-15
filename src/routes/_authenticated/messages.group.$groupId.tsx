@@ -401,7 +401,7 @@ function GroupChat() {
         ))}
         {data && !data.msgs.length && <p className="text-sm text-muted-foreground">No messages yet. Say hello!</p>}
       </div>
-      <div className="fixed inset-x-0 bottom-16 mx-auto flex max-w-xl gap-2 bg-background px-4 py-3">
+      <div className="fixed inset-x-0 bottom-16 z-10 mx-auto flex max-w-xl gap-2 bg-background px-4 py-3">
         {isRecording ? (
           <Button variant="destructive" onClick={stopRecording} className="flex items-center gap-2">
             <X className="h-4 w-4" />
