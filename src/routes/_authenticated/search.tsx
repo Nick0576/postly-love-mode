@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { PostCard } from "@/components/PostCard";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
