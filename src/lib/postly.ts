@@ -293,27 +293,6 @@ export async function isBlocked(otherId: string): Promise<boolean> {
   return !!data;
 }
 
-export async function blockUser(otherId: string): Promise<void> {
-  const uid = await currentUserId();
-  const { error } = await (supabase as any)
-    .from("blocks")
-    .insert({ blocker_id: uid, blocked_id: otherId });
-  if (error) throw error;
-  // Remove any follow relationship in both directions
-  await supabase.from("follows").delete().eq("follower_id", uid).eq("following_id", otherId);
-  await supabase.from("follows").delete().eq("follower_id", otherId).eq("following_id", uid);
-}
-
-export async function unblockUser(otherId: string): Promise<void> {
-  const uid = await currentUserId();
-  const { error } = await (supabase as any)
-    .from("blocks")
-    .delete()
-    .eq("blocker_id", uid)
-    .eq("blocked_id", otherId);
-  if (error) throw error;
-}
-
 export const LOVE_QUESTIONS = [
   "Do you believe in true love?",
   "Do you believe love can last forever?",
