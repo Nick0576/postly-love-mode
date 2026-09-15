@@ -347,6 +347,32 @@ export async function isUserBlocked(blockedUserId: string): Promise<boolean> {
   return !!data;
 }
 
+// Chat list metadata (unread/muted/archived) persistence
+const CHAT_META_KEY = "postly-chat-list-meta";
+
+function getAllChatMeta(): Record<string, { unread?: boolean; muted?: boolean; archived?: boolean }> {
+  if (typeof localStorage === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(CHAT_META_KEY) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+
+export function getChatMeta(id: string): { unread: boolean; muted: boolean; archived: boolean } {
+  const all = getAllChatMeta();
+  const m = all[id] || {};
+  return { unread: !!m.unread, muted: !!m.muted, archived: !!m.archived };
+}
+
+export function setChatMeta(id: string, patch: Partial<{ unread: boolean; muted: boolean; archived: boolean }>): void {
+  const all = getAllChatMeta();
+  all[id] = { ...all[id], ...patch };
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(CHAT_META_KEY, JSON.stringify(all));
+  }
+}
+
 // Chat background utilities (per-conversation, database-backed)
 export const CHAT_BACKGROUNDS = [
   { id: "default", label: "Default", path: null },

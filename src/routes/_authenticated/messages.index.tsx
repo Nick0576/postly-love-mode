@@ -5,8 +5,10 @@ import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { ChatContextMenu, type ConversationMeta } from "@/components/ChatContextMenu";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, timeAgo, type Profile, type GroupChat } from "@/lib/postly";
+import { currentUserId, timeAgo, type Profile, type GroupChat, getChatMeta, setChatMeta, deleteGroupChat } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/messages/")({
@@ -25,6 +27,65 @@ function Chats() {
   useEffect(() => {
     applyTheme(getTheme());
   }, []);
+
+  const [metaMap, setMetaMap] = useState<Record<string, ConversationMeta>>({});
+
+  useEffect(() => {
+    if (!data) return;
+    const entries: Record<string, ConversationMeta> = {};
+    for (const { profile } of data.directChats) {
+      entries[`dm-${profile.id}`] = getChatMeta(profile.id);
+    }
+    for (const { groupId } of data.groups) {
+      entries[`group-${groupId}`] = getChatMeta(groupId);
+    }
+    setMetaMap(entries);
+  }, [data]);
+
+  function handleAction(action: "unread" | "mute" | "archive" | "delete", id: string, kind: "dm" | "group") {
+    const key = `${kind}-${id}`;
+    const current = metaMap[key] || {};
+    switch (action) {
+      case "unread": {
+        const next = { ...current, unread: !current.unread };
+        setChatMeta(id, { unread: next.unread });
+        setMetaMap((prev) => ({ ...prev, [key]: next }));
+        toast.success(next.unread ? "Marked as unread" : "Marked as read");
+        break;
+      }
+      case "mute": {
+        const next = { ...current, muted: !current.muted };
+        setChatMeta(id, { muted: next.muted });
+        setMetaMap((prev) => ({ ...prev, [key]: next }));
+        toast.success(next.muted ? "Muted" : "Unmuted");
+        break;
+      }
+      case "archive": {
+        const next = { ...current, archived: !current.archived };
+        setChatMeta(id, { archived: next.archived });
+        setMetaMap((prev) => ({ ...prev, [key]: next }));
+        toast.success(next.archived ? "Archived" : "Unarchived");
+        break;
+      }
+      case "delete": {
+        const label = kind === "group" ? "this group chat" : "this conversation";
+        if (!confirm(`Delete ${label}? This cannot be undone.`)) return;
+        (async () => {
+          if (kind === "group") {
+            await deleteGroupChat(id);
+          } else {
+            const me = await currentUserId();
+            await supabase.from("messages").delete().or(
+              `and(sender_id.eq.${me},recipient_id.eq.${id}),and(sender_id.eq.${id},recipient_id.eq.${me})`
+            );
+          }
+          toast.success("Deleted");
+          void qc.invalidateQueries({ queryKey: ["chats"] });
+        })();
+        break;
+      }
+    }
+  }
 
   const { data } = useQuery({
     queryKey: ["chats"],
@@ -82,22 +143,35 @@ function Chats() {
         {data?.groups && data.groups.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground">Groups</h3>
-            {data.groups.map(({ group, groupId }) => (
-              <Link
-                key={groupId}
-                to="/messages/group/$groupId"
-                params={{ groupId }}
-                className="flex items-center gap-3 rounded-xl border p-3 block"
-              >
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
-                  {group.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{group.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">Group chat</p>
-                </div>
-              </Link>
-            ))}
+            {data.groups.map(({ group, groupId }) => {
+              const meta = metaMap[`group-${groupId}`] || {};
+              return (
+                <ChatContextMenu
+                  key={groupId}
+                  id={groupId}
+                  kind="group"
+                  name={group.name}
+                  subtitle="Group chat"
+                  avatarUrl={null}
+                  meta={meta}
+                  onAction={handleAction}
+                >
+                  <Link
+                    to="/messages/group/$groupId"
+                    params={{ groupId }}
+                    className="flex items-center gap-3 rounded-xl border p-3"
+                  >
+                    <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
+                      {group.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">{group.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">Group chat</p>
+                    </div>
+                  </Link>
+                </ChatContextMenu>
+              );
+            })}
           </div>
         )}
         
@@ -105,21 +179,34 @@ function Chats() {
         {data?.directChats && data.directChats.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground">Direct Messages</h3>
-            {data.directChats.map(({ profile, last }) => (
-              <Link
-                key={profile.id}
-                to="/messages/$userId"
-                params={{ userId: profile.id }}
-                className="flex items-center gap-3 rounded-xl border p-3"
-              >
-                <Avatar url={profile.avatar_url} name={profile.display_name || profile.username} size={40} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{profile.display_name || profile.username}</p>
-                  <p className="truncate text-xs text-muted-foreground">{last.content}</p>
-                </div>
-                <span className="text-xs text-muted-foreground">{timeAgo(last.created_at)}</span>
-              </Link>
-            ))}
+            {data.directChats.map(({ profile, last }) => {
+              const meta = metaMap[`dm-${profile.id}`] || {};
+              return (
+                <ChatContextMenu
+                  key={profile.id}
+                  id={profile.id}
+                  kind="dm"
+                  name={profile.display_name || profile.username}
+                  subtitle={last.content}
+                  avatarUrl={profile.avatar_url}
+                  meta={meta}
+                  onAction={handleAction}
+                >
+                  <Link
+                    to="/messages/$userId"
+                    params={{ userId: profile.id }}
+                    className="flex items-center gap-3 rounded-xl border p-3"
+                  >
+                    <Avatar url={profile.avatar_url} name={profile.display_name || profile.username} size={40} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">{profile.display_name || profile.username}</p>
+                      <p className="truncate text-xs text-muted-foreground">{last.content}</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{timeAgo(last.created_at)}</span>
+                  </Link>
+                </ChatContextMenu>
+              );
+            })}
           </div>
         )}
         
