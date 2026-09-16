@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent } from "react";
-import { MailOpen, BellOff, BellRing, Archive, ArchiveRestore, Pin, PinOff, Trash2, Check } from "lucide-react";
+import { MailOpen, BellOff, BellRing, Archive, ArchiveRestore, Pin, PinOff, Trash2, Check, X } from "lucide-react";
 import { Avatar } from "@/components/Media";
 
 export type ConversationMeta = {
@@ -189,6 +189,17 @@ export function ChatContextMenu({ id, kind, name, subtitle, avatarUrl, meta, chi
                   >
                     {meta.archived ? <ArchiveRestore className="h-5 w-5 text-muted-foreground" /> : <Archive className="h-5 w-5 text-muted-foreground" />}
                     <span className="flex-1">{meta.archived ? "Unarchive" : "Archive"}</span>
+                  </button>
+                </div>
+
+                <div className="overflow-hidden rounded-2xl border border-white/10 bg-card/90 shadow-xl backdrop-blur-xl">
+                  <button
+                    type="button"
+                    onClick={() => close()}
+                    className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm font-medium transition-colors hover:bg-muted/60"
+                  >
+                    <X className="h-5 w-5 text-muted-foreground" />
+                    <span className="flex-1">Close</span>
                   </button>
                 </div>
 
