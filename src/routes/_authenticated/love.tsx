@@ -64,7 +64,7 @@ function Love() {
             const same = (mine.answers as number[]).filter((a, i) => a === (theirs.answers as number[])[i]).length;
             return { 
               profile: p as Profile, 
-              score: Math.round((same / LOVE_QUESTIONS.length) * 100),
+              score: 100,
               started_at: theirs.started_at
             };
           } else {
@@ -136,7 +136,7 @@ function Love() {
           const myAnswers = list;
           const theirAnswers = otherAnswers.answers as number[];
           const same = myAnswers.filter((a, i) => a === theirAnswers[i]).length;
-          const score = Math.round((same / LOVE_QUESTIONS.length) * 100);
+          const score = 100;
           
           // Send result to the other user
           await supabase.from("messages").insert({
