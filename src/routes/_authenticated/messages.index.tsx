@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Pin } from "lucide-react";
 import { ChatContextMenu, type ConversationMeta } from "@/components/ChatContextMenu";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -187,6 +187,7 @@ function Chats() {
                       <p className="truncate font-semibold">{group.name}</p>
                       <p className="truncate text-xs text-muted-foreground">Group chat</p>
                     </div>
+                    {meta.pinned && <Pin className="h-4 w-4 shrink-0 text-primary fill-primary" />}
                   </Link>
                 </ChatContextMenu>
               );
@@ -223,6 +224,7 @@ function Chats() {
                       <p className="truncate font-semibold">{profile.display_name || profile.username}</p>
                       <p className="truncate text-xs text-muted-foreground">{last.content}</p>
                     </div>
+                    {meta.pinned && <Pin className="h-4 w-4 shrink-0 text-primary fill-primary" />}
                     <span className="text-xs text-muted-foreground">{timeAgo(last.created_at)}</span>
                   </Link>
                 </ChatContextMenu>
