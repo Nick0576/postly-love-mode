@@ -350,7 +350,7 @@ export async function isUserBlocked(blockedUserId: string): Promise<boolean> {
 // Chat list metadata (unread/muted/archived) persistence
 const CHAT_META_KEY = "postly-chat-list-meta";
 
-function getAllChatMeta(): Record<string, { unread?: boolean; muted?: boolean; archived?: boolean }> {
+function getAllChatMeta(): Record<string, { unread?: boolean; muted?: boolean; archived?: boolean; pinned?: boolean }> {
   if (typeof localStorage === "undefined") return {};
   try {
     return JSON.parse(localStorage.getItem(CHAT_META_KEY) || "{}") || {};
@@ -359,13 +359,13 @@ function getAllChatMeta(): Record<string, { unread?: boolean; muted?: boolean; a
   }
 }
 
-export function getChatMeta(id: string): { unread: boolean; muted: boolean; archived: boolean } {
+export function getChatMeta(id: string): { unread: boolean; muted: boolean; archived: boolean; pinned: boolean } {
   const all = getAllChatMeta();
   const m = all[id] || {};
-  return { unread: !!m.unread, muted: !!m.muted, archived: !!m.archived };
+  return { unread: !!m.unread, muted: !!m.muted, archived: !!m.archived, pinned: !!m.pinned };
 }
 
-export function setChatMeta(id: string, patch: Partial<{ unread: boolean; muted: boolean; archived: boolean }>): void {
+export function setChatMeta(id: string, patch: Partial<{ unread: boolean; muted: boolean; archived: boolean; pinned: boolean }>): void {
   const all = getAllChatMeta();
   all[id] = { ...all[id], ...patch };
   if (typeof localStorage !== "undefined") {

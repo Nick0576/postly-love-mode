@@ -91,7 +91,7 @@ function Chats() {
     setMetaMap(entries);
   }, [data]);
 
-  function handleAction(action: "unread" | "mute" | "archive" | "delete", id: string, kind: "dm" | "group") {
+  function handleAction(action: "unread" | "mute" | "archive" | "delete" | "pin", id: string, kind: "dm" | "group") {
     const key = `${kind}-${id}`;
     const current = metaMap[key] || {};
     switch (action) {
@@ -100,6 +100,13 @@ function Chats() {
         setChatMeta(id, { unread: next.unread });
         setMetaMap((prev) => ({ ...prev, [key]: next }));
         toast.success(next.unread ? "Marked as unread" : "Marked as read");
+        break;
+      }
+      case "pin": {
+        const next = { ...current, pinned: !current.pinned };
+        setChatMeta(id, { pinned: next.pinned });
+        setMetaMap((prev) => ({ ...prev, [key]: next }));
+        toast.success(next.pinned ? "Pinned" : "Unpinned");
         break;
       }
       case "mute": {
@@ -153,7 +160,9 @@ function Chats() {
         {data?.groups && data.groups.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground">Groups</h3>
-            {data.groups.map(({ group, groupId }) => {
+            {[...data.groups]
+              .sort((a, b) => (metaMap[`group-${b.groupId}`]?.pinned ? 1 : 0) - (metaMap[`group-${a.groupId}`]?.pinned ? 1 : 0))
+              .map(({ group, groupId }) => {
               const meta = metaMap[`group-${groupId}`] || {};
               return (
                 <ChatContextMenu
@@ -189,7 +198,9 @@ function Chats() {
         {data?.directChats && data.directChats.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground">Direct Messages</h3>
-            {data.directChats.map(({ profile, last }) => {
+            {[...data.directChats]
+              .sort((a, b) => (metaMap[`dm-${b.profile.id}`]?.pinned ? 1 : 0) - (metaMap[`dm-${a.profile.id}`]?.pinned ? 1 : 0))
+              .map(({ profile, last }) => {
               const meta = metaMap[`dm-${profile.id}`] || {};
               return (
                 <ChatContextMenu

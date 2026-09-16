@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent } from "react";
-import { MailOpen, BellOff, BellRing, Archive, ArchiveRestore, Trash2, Check } from "lucide-react";
+import { MailOpen, BellOff, BellRing, Archive, ArchiveRestore, Pin, PinOff, Trash2, Check } from "lucide-react";
 import { Avatar } from "@/components/Media";
 
 export type ConversationMeta = {
   unread?: boolean;
   muted?: boolean;
   archived?: boolean;
+  pinned?: boolean;
 };
 
 type ChatContextMenuProps = {
@@ -16,7 +17,7 @@ type ChatContextMenuProps = {
   avatarUrl?: string | null;
   meta: ConversationMeta;
   children: ReactNode;
-  onAction: (action: "unread" | "mute" | "archive" | "delete", id: string, kind: "dm" | "group") => void;
+  onAction: (action: "unread" | "mute" | "archive" | "delete" | "pin", id: string, kind: "dm" | "group") => void;
 };
 
 const LONG_PRESS_MS = 500;
@@ -168,6 +169,17 @@ export function ChatContextMenu({ id, kind, name, subtitle, avatarUrl, meta, chi
                     {meta.muted ? <BellRing className="h-5 w-5 text-muted-foreground" /> : <BellOff className="h-5 w-5 text-muted-foreground" />}
                     <span className="flex-1">{meta.muted ? "Unmute" : "Mute"}</span>
                     {meta.muted && <Check className="h-4 w-4 text-primary" />}
+                  </button>
+                  <div className="h-px bg-border/60" />
+                  <div className="h-px bg-border/60" />
+                  <button
+                    type="button"
+                    onClick={() => { close(); onAction("pin", id, kind); }}
+                    className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm font-medium transition-colors hover:bg-muted/60"
+                  >
+                    {meta.pinned ? <PinOff className="h-5 w-5 text-muted-foreground" /> : <Pin className="h-5 w-5 text-muted-foreground" />}
+                    <span className="flex-1">{meta.pinned ? "Unpin" : "Pin"}</span>
+                    {meta.pinned && <Check className="h-4 w-4 text-primary" />}
                   </button>
                   <div className="h-px bg-border/60" />
                   <button
