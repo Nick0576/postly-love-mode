@@ -7,6 +7,7 @@ import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/PostCard";
 import { YouTubeMusicPlayer } from "@/components/YouTubeMusicPlayer";
+import { MusicPicker, type MusicPick } from "@/components/MusicPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, signedUrl, type Profile, isUserOnline, recordProfileView, getProfileViews, timeAgo, cleanupOldProfileViews, blockUser, unblockUser, isUserBlocked } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
@@ -301,6 +302,7 @@ function ProfilePage() {
               </div>
             )}
           </div>
+          <FavoriteSongs userId={data.profile.id} isOwner={data.me === data.profile.id} />
           {data.isMutual && (
             <div className="mt-4 rounded-2xl border p-4 bg-gradient-to-r from-pink-50 to-red-50 dark:from-pink-950/20 dark:to-red-950/20">
               <div className="flex items-center gap-3">
