@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { X, ExternalLink } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
@@ -551,12 +551,23 @@ function FavoriteSongs({ userId, isOwner }: { userId: string; isOwner: boolean }
           )}
 
           {nowPlaying && (
-            <YouTubeMusicPlayer
-              key={nowPlaying.videoId}
-              videoId={nowPlaying.videoId}
-              title={nowPlaying.title}
-              autoplay={true}
-            />
+            <div className="space-y-2">
+              <YouTubeMusicPlayer
+                key={nowPlaying.videoId}
+                videoId={nowPlaying.videoId}
+                title={nowPlaying.title}
+                autoplay={true}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => window.open("https://drive.google.com/file/d/13bZbdTY6SJlwkL74yzBvWNZAFvQ1k27L/view?usp=drivesdk", "_blank")}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Play full song in TipTop Music
+              </Button>
+            </div>
           )}
         </div>
       )}
