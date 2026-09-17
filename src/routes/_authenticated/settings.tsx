@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MusicPicker, type MusicPick } from "@/components/MusicPicker";
+import { MusicClipSelector } from "@/components/MusicClipSelector";
+import type { MusicClipPick } from "@/components/MusicClipSelector";
+import type { MusicClipPick } from "@/components/MusicClipSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, uploadMedia, type Profile, getChatBubbleFromStorage, saveChatBubbleToStorage, unblockUser, getBlockedUsers,  } from "@/lib/postly";
 import { applyTheme, getTheme, setTheme, type Theme } from "@/lib/theme";
@@ -33,6 +36,13 @@ function SettingsPage() {
   const [chatBubbleText, setChatBubbleText] = useState("");
   const [chatBubbleEnabled, setChatBubbleEnabled] = useState(false);
   const [chatBubbleMusicVideoId, setChatBubbleMusicVideoId] = useState("");
+  const [chatBubbleMusicTitle, setChatBubbleMusicTitle] = useState("");
+  const [chatBubbleMusicClipStart, setChatBubbleMusicClipStart] = useState<number | null>(null);
+  const [chatBubbleMusicClipEnd, setChatBubbleMusicClipEnd] = useState<number | null>(null);
+  const [profileViewHistoryEnabled, setProfileViewHistoryEnabled] = useState(true);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const taps = useRef(0);
   const [chatBubbleMusicTitle, setChatBubbleMusicTitle] = useState("");
   const [profileViewHistoryEnabled, setProfileViewHistoryEnabled] = useState(true);
   const [saved, setSaved] = useState(false);
@@ -68,6 +78,10 @@ function SettingsPage() {
         setChatBubbleText(dbBubbleText ?? localBubble?.text ?? "");
         setChatBubbleEnabled(dbBubbleEnabled ?? localBubble?.enabled ?? false);
         setChatBubbleMusicVideoId(p?.chat_bubble_music_video_id ?? "");
+        setChatBubbleMusicTitle(p?.chat_bubble_music_title ?? "");
+        setChatBubbleMusicClipStart(p?.chat_bubble_music_clip_start ?? null);
+        setChatBubbleMusicClipEnd(p?.chat_bubble_music_clip_end ?? null);
+        setProfileViewHistoryEnabled(p?.profile_view_history_enabled ?? true);
         setChatBubbleMusicTitle(p?.chat_bubble_music_title ?? "");
         setProfileViewHistoryEnabled(p?.profile_view_history_enabled ?? true);
         return p;
@@ -108,6 +122,21 @@ function SettingsPage() {
       
       // Try to save to database
       const { error } = await supabase
+        .from("profiles")
+        .update({ 
+          display_name: name, 
+          bio, 
+          chat_bubble_text: chatBubbleText,
+          chat_bubble_enabled: chatBubbleEnabled,
+          chat_bubble_music_video_id: chatBubbleMusicVideoId,
+          chat_bubble_music_title: chatBubbleMusicTitle,
+          chat_bubble_music_clip_start: chatBubbleMusicClipStart,
+          chat_bubble_music_clip_end: chatBubbleMusicClipEnd,
+          profile_view_history_enabled: profileViewHistoryEnabled,
+          ...(avatar_url && !isBanner ? { avatar_url } : {}),
+          ...(avatar_url && isBanner ? { banner_url: avatar_url } : {})
+        })
+        .eq("id", me.id);
         .from("profiles")
         .update({ 
           display_name: name, 
@@ -233,6 +262,31 @@ function SettingsPage() {
           <div className="space-y-1">
             <Label>Bubble Music</Label>
             {chatBubbleMusicVideoId ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">{chatBubbleMusicTitle}</p>
+                <Button variant="outline" size="sm" onClick={() => {
+                  setChatBubbleMusicVideoId("");
+                  setChatBubbleMusicTitle("");
+                  setChatBubbleMusicClipStart(null);
+                  setChatBubbleMusicClipEnd(null);
+                  void save();
+                }}>
+                  Remove Music
+                </Button>
+              </div>
+            ) : (
+              <MusicClipSelector 
+                onPick={(m: MusicClipPick) => {
+                  setChatBubbleMusicVideoId(m.videoId);
+                  setChatBubbleMusicTitle(m.title);
+                  setChatBubbleMusicClipStart(m.clipStart);
+                  setChatBubbleMusicClipEnd(m.clipEnd);
+                  void save();
+                }}
+                defaultStart={0}
+                defaultEnd={30}
+              />
+            )}
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">{chatBubbleMusicTitle}</p>
                 <Button variant="outline" size="sm" onClick={() => {

@@ -419,6 +419,17 @@ function ProfilePage() {
                     title={data.profile.chat_bubble_music_title ?? null}
                     autoplay={true}
                     previewDuration={30}
+                    clipStart={data.profile.chat_bubble_music_clip_start ?? undefined}
+                    clipEnd={data.profile.chat_bubble_music_clip_end ?? undefined}
+                  />
+                </div>
+              )}
+                <div className="w-full">
+                  <YouTubeMusicPlayer 
+                    videoId={data.profile.chat_bubble_music_video_id}
+                    title={data.profile.chat_bubble_music_title ?? null}
+                    autoplay={true}
+                    previewDuration={30}
                   />
                 </div>
               )}

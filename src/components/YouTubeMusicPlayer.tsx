@@ -36,21 +36,28 @@ export function YouTubeMusicPlayer({
   title,
   autoplay = true,
   previewDuration,
+  clipStart,
+  clipEnd,
 }: {
   videoId: string;
   title?: string | null;
   autoplay?: boolean;
   previewDuration?: number;
+  clipStart?: number | null;
+  clipEnd?: number | null;
 }) {
   const holderRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const previewEndRef = useRef<number | null>(null);
+  const clipStartRef = useRef<number | null>(clipStart || null);
+  const clipEndRef = useRef<number | null>(clipEnd || null);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [ready, setReady] = useState(false);
 
   const isPreview = typeof previewDuration === "number" && previewDuration > 0;
+  const hasClip = typeof clipStart === "number" && typeof clipEnd === "number";
 
   // Start a preview window of `previewDuration` seconds from `startTime`.
   function playFrom(startTime: number) {
@@ -76,6 +83,10 @@ export function YouTubeMusicPlayer({
       // Restart a fresh 30s window when the last one finished.
       if (end === null || current >= end - 0.2) playFrom(current);
       else p.playVideo();
+    } else if (hasClip) {
+      // For clips, seek to start and play
+      p.seekTo(clipStartRef.current || 0, true);
+      p.playVideo();
     } else {
       p.playVideo();
     }
@@ -92,13 +103,24 @@ export function YouTubeMusicPlayer({
         videoId,
         width: "0",
         height: "0",
-        playerVars: { autoplay: autoplay ? 1 : 0, controls: 0, playsinline: 1, modestbranding: 1, rel: 0 },
+        playerVars: { 
+          autoplay: autoplay ? 1 : 0, 
+          controls: 0, 
+          playsinline: 1, 
+          modestbranding: 1, 
+          rel: 0,
+          start: hasClip ? clipStartRef.current : undefined,
+          end: hasClip ? clipEndRef.current : undefined,
+        },
         events: {
           onReady: (e: any) => {
             setReady(true);
             setDuration(e.target.getDuration() || 0);
             if (autoplay) {
               previewEndRef.current = isPreview ? (previewDuration as number) : null;
+              if (hasClip) {
+                e.target.seekTo(clipStartRef.current || 0, true);
+              }
               e.target.playVideo();
             }
           },
@@ -115,7 +137,7 @@ export function YouTubeMusicPlayer({
       try { playerRef.current?.destroy?.(); } catch { /* noop */ }
       playerRef.current = null;
     };
-  }, [videoId, autoplay]);
+  }, [videoId, autoplay, hasClip]);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -129,9 +151,13 @@ export function YouTubeMusicPlayer({
       if (isPreview && end !== null && t >= end) {
         p.pauseVideo();
       }
+      // Auto-pause if we reach clip end
+      if (hasClip && clipEndRef.current !== null && t >= clipEndRef.current) {
+        p.pauseVideo();
+      }
     }, 250);
     return () => window.clearInterval(id);
-  }, [isPreview]);
+  }, [isPreview, hasClip]);
 
   const end = previewEndRef.current;
   const remaining = isPreview && end !== null ? Math.max(0, end - current) : 0;
@@ -140,6 +166,11 @@ export function YouTubeMusicPlayer({
     <div className="w-full rounded-2xl border bg-card p-3 shadow-soft">
       <div ref={holderRef} style={{ width: 0, height: 0, overflow: "hidden" }} />
       {title && <p className="mb-2 truncate text-sm font-medium">🎵 {title}</p>}
+      {hasClip && (
+        <div className="mb-2 text-xs text-muted-foreground">
+          Clip: {fmt(clipStartRef.current || 0)} - {fmt(clipEndRef.current || 0)}
+        </div>
+      )}
       {isPreview && (
         <div className="mb-2 text-xs text-muted-foreground">
           {previewDuration}s preview — drag anywhere to preview that part · {Math.ceil(remaining)}s left
