@@ -45,6 +45,7 @@ export const searchMusic = createServerFn({ method: "GET" })
     const q = data.q.trim();
     if (!q) return [];
 
+    // Try Piped API first (already filters for music_songs)
     for (const host of PIPED_HOSTS) {
       const json = await fetchJson(
         `${host}/search?q=${encodeURIComponent(q)}&filter=music_songs`,
@@ -62,21 +63,28 @@ export const searchMusic = createServerFn({ method: "GET" })
       if (mapped.length) return mapped;
     }
 
-    for (const host of INVIDIOUS_HOSTS) {
-      const json = await fetchJson(
-        `${host}/api/v1/search?q=${encodeURIComponent(q)}&type=video`,
-      );
-      const items = Array.isArray(json) ? json : [];
-      const mapped: MusicResult[] = items
-        .map((r: any) => ({
-          videoId: String(r?.videoId ?? ""),
-          title: String(r?.title ?? "Untitled"),
-          author: String(r?.author ?? ""),
-          thumbnail: String(r?.videoThumbnails?.[0]?.url ?? ""),
-        }))
-        .filter((r: MusicResult) => r.videoId)
-        .slice(0, 24);
-      if (mapped.length) return mapped;
+    // Fallback to YouTube Music API if available, or filter video results for music
+    // Try searching with music-related keywords to get better results
+    const musicKeywords = ["official", "audio", "lyrics", "music video", "official video"];
+    const searchQueries = [q, ...musicKeywords.map(kw => `${q} ${kw}`)].filter(Boolean);
+
+    for (const query of searchQueries) {
+      for (const host of PIPED_HOSTS) {
+        const json = await fetchJson(
+          `${host}/search?q=${encodeURIComponent(query)}&filter=music_songs`,
+        );
+        const items = Array.isArray(json?.items) ? json.items : [];
+        const mapped: MusicResult[] = items
+          .map((r: any) => ({
+            videoId: idFromUrl(r?.url),
+            title: String(r?.title ?? "Untitled"),
+            author: String(r?.uploaderName ?? ""),
+            thumbnail: String(r?.thumbnail ?? ""),
+          }))
+          .filter((r: MusicResult) => r.videoId)
+          .slice(0, 24);
+        if (mapped.length) return mapped;
+      }
     }
 
     return [];
