@@ -47,6 +47,176 @@ export type Database = {
           },
         ]
       }
+      button_elements: {
+        Row: {
+          button_page_id: string | null
+          content: Json
+          created_at: string
+          id: string
+          link_button_id: string | null
+          position: number
+          type: string
+        }
+        Insert: {
+          button_page_id?: string | null
+          content: Json
+          created_at?: string
+          id?: string
+          link_button_id?: string | null
+          position?: number
+          type: string
+        }
+        Update: {
+          button_page_id?: string | null
+          content?: Json
+          created_at?: string
+          id?: string
+          link_button_id?: string | null
+          position?: number
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "button_elements_button_page_id_fkey"
+            columns: ["button_page_id"]
+            isOneToOne: false
+            referencedRelation: "button_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "button_elements_link_button_id_fkey"
+            columns: ["link_button_id"]
+            isOneToOne: false
+            referencedRelation: "buttons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      button_pages: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "button_pages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buttons: {
+        Row: {
+          appearance: Json | null
+          button_page_id: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          post_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          appearance?: Json | null
+          button_page_id?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          post_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          appearance?: Json | null
+          button_page_id?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          post_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buttons_button_page_id_fkey"
+            columns: ["button_page_id"]
+            isOneToOne: false
+            referencedRelation: "button_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buttons_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buttons_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_backgrounds: {
+        Row: {
+          background_path: string | null
+          conversation_id: string
+          conversation_type: string
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          background_path?: string | null
+          conversation_id: string
+          conversation_type: string
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          background_path?: string | null
+          conversation_id?: string
+          conversation_type?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_backgrounds_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           content: string
@@ -96,6 +266,38 @@ export type Database = {
           },
         ]
       }
+      favorite_songs: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_songs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string
@@ -123,6 +325,71 @@ export type Database = {
           {
             foreignKeyName: "follows_following_id_fkey"
             columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_chats: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_chats_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "group_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_members_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -208,6 +475,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          group_id: string | null
           id: string
           media_type: string | null
           media_url: string | null
@@ -217,6 +485,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          group_id?: string | null
           id?: string
           media_type?: string | null
           media_url?: string | null
@@ -226,6 +495,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          group_id?: string | null
           id?: string
           media_type?: string | null
           media_url?: string | null
@@ -233,6 +503,13 @@ export type Database = {
           sender_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "group_chats"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "messages_recipient_id_fkey"
             columns: ["recipient_id"]
@@ -414,7 +691,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      block_user: { Args: { blocked_user_id: string }; Returns: undefined }
+      unblock_user: { Args: { blocked_user_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
