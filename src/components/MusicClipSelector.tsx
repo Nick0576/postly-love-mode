@@ -91,7 +91,7 @@ export function MusicClipSelector({
                   max={duration || 300}
                   step={1}
                   value={[clipStart]}
-                  onValueChange={([value]) => setClipStart(value)}
+                  onValueChange={([value = 0]) => setClipStart(value)}
                   onMouseUp={() => {
                     if (clipEnd <= clipStart) {
                       setClipEnd(clipStart + 30);
@@ -108,7 +108,7 @@ export function MusicClipSelector({
                   max={duration || 300}
                   step={1}
                   value={[clipEnd]}
-                  onValueChange={([value]) => setClipEnd(value)}
+                  onValueChange={([value = 0]) => setClipEnd(value)}
                   className="w-full"
                 />
               </div>

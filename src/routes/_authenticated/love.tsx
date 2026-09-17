@@ -61,10 +61,11 @@ function Love() {
         matches = (people ?? []).map((p) => {
           const theirs = others.find((o) => o.user_id === p.id);
           if (mine && theirs) {
-            const same = (mine.answers as number[]).filter((a, i) => a === (theirs.answers as number[])[i]).length;
+            const same = (mine.answers as number[]).filter((a, i) => a !== -1 && a === (theirs.answers as number[])[i]).length;
+            const score = Math.round((same / LOVE_QUESTIONS.length) * 100);
             return { 
               profile: p as Profile, 
-              score: 100,
+              score,
               started_at: theirs.started_at
             };
           } else {
@@ -132,26 +133,20 @@ function Love() {
           .single();
         
         if (otherAnswers) {
-          // Both have submitted - send compatibility result to both
-          const myAnswers = list;
+          // Both have submitted - compute compatibility and notify both sides
           const theirAnswers = otherAnswers.answers as number[];
-          const same = myAnswers.filter((a, i) => a === theirAnswers[i]).length;
-          const score = 100;
-          
-          // Send result to the other user
-          await supabase.from("messages").insert({
-            sender_id: data.me,
-            recipient_id: match.profile.id,
-            content: `Love Mode: You are ${score}% compatible with @${data.myProfile?.display_name || data.myProfile?.username}! 💕`,
-            media_type: "love_result"
-          });
-          
-          // Send result to current user
-          await supabase.from("messages").insert({
-            sender_id: match.profile.id,
-            recipient_id: data.me,
-            content: `Love Mode: You are ${score}% compatible with @${match.profile.display_name || match.profile.username}! 💕`,
-            media_type: "love_result"
+          const same = list.filter((a, i) => a !== -1 && a === theirAnswers[i]).length;
+          const score = Math.round((same / LOVE_QUESTIONS.length) * 100);
+
+          const myName = data.myProfile?.display_name || data.myProfile?.username;
+          const theirName = match.profile.display_name || match.profile.username;
+
+          // Uses the SECURITY DEFINER RPC: verifies mutual-follow and writes
+          // both sides of the conversation without allowing message forgery.
+          await supabase.rpc("send_love_match_notifications", {
+            target_user_id: match.profile.id,
+            caller_content: `Love Mode: You are ${score}% compatible with @${myName}! 💕`,
+            target_content: `Love Mode: You are ${score}% compatible with @${theirName}! 💕`,
           });
         } else {
           // Only current user has submitted - send waiting message

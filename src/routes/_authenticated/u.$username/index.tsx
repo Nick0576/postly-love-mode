@@ -47,18 +47,27 @@ function ProfilePage() {
         .maybeSingle();
       if (!profile) return null;
       const p = profile as Profile;
-      const [posts, following, followers, followingCount, followsBack, loveAnswers, blocked] = await Promise.all([
+      const [posts, following, followers, followingCount, followsBack, loveAnswers, myLoveAnswers, blocked] = await Promise.all([
         supabase.from("posts").select(`${POST_SELECT},buttons(*)`).eq("user_id", p.id).order("is_pinned", { ascending: false }).order("created_at", { ascending: false }).limit(20),
         supabase.from("follows").select("following_id").eq("follower_id", me),
         supabase.from("follows").select("follower_id").eq("following_id", me),
         supabase.from("follows").select("follower_id").eq("following_id", p.id),
         supabase.from("follows").select("follower_id").eq("follower_id", p.id),
         supabase.from("love_answers").select("answers").eq("user_id", p.id).maybeSingle(),
+        supabase.from("love_answers").select("answers").eq("user_id", me).maybeSingle(),
         supabase.from("blocks").select("blocked_id").eq("blocker_id", me).eq("blocked_id", p.id).maybeSingle()
       ]);
       const followingSet = new Set((following?.data ?? []).map((r) => r.following_id));
       const followersSet = new Set((followers?.data ?? []).map((r) => r.follower_id));
-      const loveMatch = loveAnswers ? null : null; // Will calculate if both have answers
+      let loveMatch: number | null = null;
+      if (loveAnswers?.data && myLoveAnswers?.data) {
+        const theirs = (loveAnswers.data as { answers: number[] }).answers ?? [];
+        const mine = (myLoveAnswers.data as { answers: number[] }).answers ?? [];
+        if (mine.length > 0 && theirs.length > 0) {
+          const same = mine.filter((a, i) => a !== -1 && a === theirs[i]).length;
+          loveMatch = Math.round((same / mine.length) * 100);
+        }
+      }
       return {
         me,
         profile: p,
@@ -419,17 +428,8 @@ function ProfilePage() {
                     title={data.profile.chat_bubble_music_title ?? null}
                     autoplay={true}
                     previewDuration={30}
-                    clipStart={data.profile.chat_bubble_music_clip_start ?? undefined}
-                    clipEnd={data.profile.chat_bubble_music_clip_end ?? undefined}
-                  />
-                </div>
-              )}
-                <div className="w-full">
-                  <YouTubeMusicPlayer 
-                    videoId={data.profile.chat_bubble_music_video_id}
-                    title={data.profile.chat_bubble_music_title ?? null}
-                    autoplay={true}
-                    previewDuration={30}
+                    clipStart={data.profile.chat_bubble_music_clip_start ?? null}
+                    clipEnd={data.profile.chat_bubble_music_clip_end ?? null}
                   />
                 </div>
               )}

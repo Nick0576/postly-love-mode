@@ -14,8 +14,6 @@ export type Profile = {
   chat_bubble_music_clip_start?: number | null;
   chat_bubble_music_clip_end?: number | null;
   last_seen: string | null;
-  chat_bubble_music_title?: string | null;
-  last_seen: string | null;
   is_online: boolean;
   profile_view_history_enabled: boolean;
 };

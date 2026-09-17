@@ -603,6 +603,8 @@ export type Database = {
           banner_url: string | null
           bio: string
           chat_bubble_enabled: boolean | null
+          chat_bubble_music_clip_end: number | null
+          chat_bubble_music_clip_start: number | null
           chat_bubble_music_title: string | null
           chat_bubble_music_video_id: string | null
           chat_bubble_text: string | null
@@ -619,6 +621,8 @@ export type Database = {
           banner_url?: string | null
           bio?: string
           chat_bubble_enabled?: boolean | null
+          chat_bubble_music_clip_end?: number | null
+          chat_bubble_music_clip_start?: number | null
           chat_bubble_music_title?: string | null
           chat_bubble_music_video_id?: string | null
           chat_bubble_text?: string | null
@@ -635,6 +639,8 @@ export type Database = {
           banner_url?: string | null
           bio?: string
           chat_bubble_enabled?: boolean | null
+          chat_bubble_music_clip_end?: number | null
+          chat_bubble_music_clip_start?: number | null
           chat_bubble_music_title?: string | null
           chat_bubble_music_video_id?: string | null
           chat_bubble_text?: string | null
@@ -692,6 +698,8 @@ export type Database = {
     }
     Functions: {
       block_user: { Args: { blocked_user_id: string }; Returns: undefined }
+      is_group_member: { Args: { target_group_id: string }; Returns: boolean }
+      send_love_match_notifications: { Args: { caller_content: string; target_content: string; target_user_id: string }; Returns: undefined }
       unblock_user: { Args: { blocked_user_id: string }; Returns: undefined }
     }
     Enums: {
