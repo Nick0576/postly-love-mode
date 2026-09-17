@@ -87,7 +87,7 @@ export function YouTubeMusicPlayer({
     return { start, end };
   }
 
-  // Start playback at the middle, inside the allowed window.
+  // Start playback at the beginning of the middle window.
   function playFromMiddle() {
     const p = playerRef.current;
     if (!p) return;
@@ -95,9 +95,8 @@ export function YouTubeMusicPlayer({
     const { start, end } = windowBounds(d);
     previewStartRef.current = start;
     previewEndRef.current = end;
-    const seek = midStart(d);
-    p.seekTo(clamp(seek, start, Math.max(start, end - 0.5)), true);
-    setCurrent(clamp(seek, start, Math.max(start, end - 0.5)));
+    p.seekTo(start, true);
+    setCurrent(start);
     p.playVideo();
   }
 
@@ -153,9 +152,8 @@ export function YouTubeMusicPlayer({
                 const { start, end } = windowBounds(d);
                 previewStartRef.current = start;
                 previewEndRef.current = end;
-                const seek = midStart(d);
-                e.target.seekTo(clamp(seek, start, Math.max(start, end - 0.5)), true);
-                setCurrent(clamp(seek, start, Math.max(start, end - 0.5)));
+                e.target.seekTo(start, true);
+                setCurrent(start);
                 e.target.playVideo();
               } else if (hasClip) {
                 e.target.seekTo(clipStartRef.current || 0, true);
