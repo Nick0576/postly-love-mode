@@ -40,6 +40,7 @@ function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const taps = useRef(0);
+  const hasClipColumnsRef = useRef(true);
 
   useEffect(() => {
     const theme = getTheme();
@@ -54,11 +55,15 @@ function SettingsPage() {
         const uid = await currentUserId();
         const { data, error } = await supabase
           .from("profiles")
-          .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,chat_bubble_music_video_id,chat_bubble_music_title,chat_bubble_music_clip_start,chat_bubble_music_clip_end,profile_view_history_enabled")
+          .select("*")
           .eq("id", uid)
           .maybeSingle();
         if (error) throw error;
         const p = data as Profile | null;
+        // The music-clip columns are added by migration
+        // 20260917_add_music_clip_to_profiles.sql; skip them in the update
+        // payload until the migration has been applied to the database.
+        hasClipColumnsRef.current = p ? "chat_bubble_music_clip_start" in p : false;
         setName(p?.display_name ?? "");
         setBio(p?.bio ?? "");
         
@@ -76,7 +81,7 @@ function SettingsPage() {
         setProfileViewHistoryEnabled(p?.profile_view_history_enabled ?? true);
         return p;
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(e instanceof Error ? e.message : ((e as { message?: string })?.message ?? String(e)));
         throw e;
       }
     },
@@ -120,11 +125,18 @@ function SettingsPage() {
           chat_bubble_enabled: chatBubbleEnabled,
           chat_bubble_music_video_id: chatBubbleMusicVideoId,
           chat_bubble_music_title: chatBubbleMusicTitle,
-          chat_bubble_music_clip_start: chatBubbleMusicClipStart,
-          chat_bubble_music_clip_end: chatBubbleMusicClipEnd,
           profile_view_history_enabled: profileViewHistoryEnabled,
           ...(avatar_url && !isBanner ? { avatar_url } : {}),
-          ...(avatar_url && isBanner ? { banner_url: avatar_url } : {})
+          ...(avatar_url && isBanner ? { banner_url: avatar_url } : {}),
+          // Music-clip columns are added by migration
+          // 20260917_add_music_clip_to_profiles.sql; only send them once the
+          // migration has been applied (detected at profile load).
+          ...(hasClipColumnsRef.current
+            ? {
+                chat_bubble_music_clip_start: chatBubbleMusicClipStart,
+                chat_bubble_music_clip_end: chatBubbleMusicClipEnd,
+              }
+            : {}),
         })
         .eq("id", me.id);
       
@@ -149,18 +161,20 @@ function SettingsPage() {
     }
   }
 
+  const errorText = (e: unknown) => e instanceof Error ? e.message : ((e as { message?: string })?.message ?? String(e));
+
   return (
     <AppShell title="Settings">
       {(error || queryError) && (
         <div className="mb-4 rounded-lg border border-red-500 bg-red-50 p-4 dark:bg-red-950/20">
           <h3 className="font-semibold text-red-900 dark:text-red-100">Error loading settings</h3>
-          <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error || (queryError instanceof Error ? queryError.message : String(queryError))}</p>
+          <p className="mt-1 text-sm text-red-700 dark:text-red-300">{errorText(error || queryError)}</p>
           <Button
             variant="outline"
             size="sm"
             className="mt-2"
             onClick={() => {
-              navigator.clipboard.writeText(error || (queryError instanceof Error ? queryError.message : String(queryError)));
+              navigator.clipboard.writeText(errorText(error || queryError));
               alert("Error copied to clipboard");
             }}
           >

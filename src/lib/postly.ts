@@ -55,7 +55,7 @@ export type PostRow = {
 };
 
 export const POST_SELECT =
-  "id,user_id,content,media_url,created_at,is_pinned,profiles(id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,chat_bubble_music_video_id,chat_bubble_music_title,chat_bubble_music_clip_start,chat_bubble_music_clip_end,last_seen,is_online,profile_view_history_enabled)";
+  "id,user_id,content,media_url,created_at,is_pinned,profiles(*)";
 
 export async function currentUserId(): Promise<string> {
   const { data } = await supabase.auth.getUser();
