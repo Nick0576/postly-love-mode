@@ -35,7 +35,7 @@ export function YouTubeMusicPlayer({
   videoId,
   title,
   autoplay = true,
-  previewDuration = 30,
+  previewDuration,
 }: {
   videoId: string;
   title?: string | null;
@@ -44,39 +44,49 @@ export function YouTubeMusicPlayer({
 }) {
   const holderRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
+  const previewEndRef = useRef<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [ready, setReady] = useState(false);
-  const [previewStart, setPreviewStart] = useState<number | null>(null);
-  const previewEndRef = useRef<number | null>(null);
-  const previewTimerRef = useRef<number | null>(null);
 
-  const isPreview = previewDuration !== undefined;
+  const isPreview = typeof previewDuration === "number" && previewDuration > 0;
 
-  function startPreviewAt(startTime: number) {
-    if (!playerRef.current) return;
-    playerRef.current.seekTo(startTime, true);
-    setCurrent(startTime);
-    setPreviewStart(startTime);
-    previewEndRef.current = startTime + previewDuration;
-    playerRef.current.playVideo();
+  // Start a preview window of `previewDuration` seconds from `startTime`.
+  function playFrom(startTime: number) {
+    const p = playerRef.current;
+    if (!p) return;
+    const d = p.getDuration?.() || duration || 0;
+    const start = Math.max(0, d ? Math.min(startTime, Math.max(0, d - 0.5)) : startTime);
+    previewEndRef.current = isPreview ? start + (previewDuration as number) : null;
+    p.seekTo(start, true);
+    setCurrent(start);
+    p.playVideo();
   }
 
   function toggle() {
     const p = playerRef.current;
     if (!p) return;
-    if (playing) p.pauseVideo();
-    else p.playVideo();
+    if (playing) {
+      p.pauseVideo();
+      return;
+    }
+    if (isPreview) {
+      const end = previewEndRef.current;
+      // Restart a fresh 30s window when the last one finished.
+      if (end === null || current >= end - 0.2) playFrom(current);
+      else p.playVideo();
+    } else {
+      p.playVideo();
+    }
   }
 
   useEffect(() => {
     let cancelled = false;
-    let mount: HTMLDivElement | null = null;
     (async () => {
       const YT = await loadYT();
       if (cancelled || !holderRef.current) return;
-      mount = document.createElement("div");
+      const mount = document.createElement("div");
       holderRef.current.appendChild(mount);
       playerRef.current = new YT.Player(mount, {
         videoId,
@@ -88,25 +98,20 @@ export function YouTubeMusicPlayer({
             setReady(true);
             setDuration(e.target.getDuration() || 0);
             if (autoplay) {
+              previewEndRef.current = isPreview ? (previewDuration as number) : null;
               e.target.playVideo();
             }
           },
           onStateChange: (e: any) => {
-            const s = e.data;
-            setPlaying(s === YT.PlayerState.PLAYING);
-            if (s === YT.PlayerState.PLAYING || s === YT.PlayerState.PAUSED) {
-              setDuration(e.target.getDuration() || 0);
-            }
+            setPlaying(e.data === YT.PlayerState.PLAYING);
+            const d = e.target.getDuration?.() || 0;
+            if (d) setDuration(d);
           },
         },
       });
     })();
     return () => {
       cancelled = true;
-      if (previewTimerRef.current) {
-        window.clearTimeout(previewTimerRef.current);
-        previewTimerRef.current = null;
-      }
       try { playerRef.current?.destroy?.(); } catch { /* noop */ }
       playerRef.current = null;
     };
@@ -115,23 +120,21 @@ export function YouTubeMusicPlayer({
   useEffect(() => {
     const id = window.setInterval(() => {
       const p = playerRef.current;
-      if (p?.getCurrentTime) {
-        const newTime = p.getCurrentTime() || 0;
-        setCurrent(newTime);
-        const d = p.getDuration() || 0;
-        if (d) setDuration(d);
-        if (isPreview && previewStart !== null && previewEndRef.current !== null) {
-          if (newTime >= previewEndRef.current && playing) {
-            p.pauseVideo();
-          }
-        }
+      if (!p?.getCurrentTime) return;
+      const t = p.getCurrentTime() || 0;
+      setCurrent(t);
+      const d = p.getDuration?.() || 0;
+      if (d) setDuration(d);
+      const end = previewEndRef.current;
+      if (isPreview && end !== null && t >= end) {
+        p.pauseVideo();
       }
-    }, 400);
+    }, 250);
     return () => window.clearInterval(id);
-  }, [isPreview, previewStart]);
+  }, [isPreview]);
 
-  const previewEndTime = previewEndRef.current ?? 0;
-  const remainingPreview = previewEndRef.current ? Math.max(0, previewEndRef.current - current) : 0;
+  const end = previewEndRef.current;
+  const remaining = isPreview && end !== null ? Math.max(0, end - current) : 0;
 
   return (
     <div className="w-full rounded-2xl border bg-card p-3 shadow-soft">
@@ -139,13 +142,13 @@ export function YouTubeMusicPlayer({
       {title && <p className="mb-2 truncate text-sm font-medium">🎵 {title}</p>}
       {isPreview && (
         <div className="mb-2 text-xs text-muted-foreground">
-          Preview: {Math.round(remainingPreview)}s remaining
+          {previewDuration}s preview — drag anywhere to preview that part · {Math.ceil(remaining)}s left
         </div>
       )}
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={isPreview ? () => startPreviewAt(current) : toggle}
+          onClick={toggle}
           disabled={!ready}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
           aria-label={playing ? "Pause" : "Play"}
@@ -161,11 +164,8 @@ export function YouTubeMusicPlayer({
           onChange={(e) => {
             const t = Number(e.target.value);
             setCurrent(t);
-            if (isPreview) {
-              startPreviewAt(t);
-            } else {
-              playerRef.current?.seekTo(t, true);
-            }
+            if (isPreview) playFrom(t);
+            else playerRef.current?.seekTo(t, true);
           }}
           disabled={!ready || !duration}
           className="flex-1 accent-primary"
