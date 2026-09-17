@@ -145,6 +145,21 @@ function SettingsPage() {
           chat_bubble_enabled: chatBubbleEnabled,
           chat_bubble_music_video_id: chatBubbleMusicVideoId,
           chat_bubble_music_title: chatBubbleMusicTitle,
+          chat_bubble_music_clip_start: chatBubbleMusicClipStart,
+          chat_bubble_music_clip_end: chatBubbleMusicClipEnd,
+          profile_view_history_enabled: profileViewHistoryEnabled,
+          ...(avatar_url && !isBanner ? { avatar_url } : {}),
+          ...(avatar_url && isBanner ? { banner_url: avatar_url } : {})
+        })
+        .eq("id", me.id);
+        .from("profiles")
+        .update({ 
+          display_name: name, 
+          bio, 
+          chat_bubble_text: chatBubbleText,
+          chat_bubble_enabled: chatBubbleEnabled,
+          chat_bubble_music_video_id: chatBubbleMusicVideoId,
+          chat_bubble_music_title: chatBubbleMusicTitle,
           profile_view_history_enabled: profileViewHistoryEnabled,
           ...(avatar_url && !isBanner ? { avatar_url } : {}),
           ...(avatar_url && isBanner ? { banner_url: avatar_url } : {})
