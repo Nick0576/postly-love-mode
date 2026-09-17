@@ -430,6 +430,7 @@ function ProfilePage() {
                     previewDuration={30}
                     clipStart={data.profile.chat_bubble_music_clip_start ?? null}
                     clipEnd={data.profile.chat_bubble_music_clip_end ?? null}
+                    hideControls
                   />
                 </div>
               )}

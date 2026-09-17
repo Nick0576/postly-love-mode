@@ -38,6 +38,7 @@ export function YouTubeMusicPlayer({
   previewDuration,
   clipStart,
   clipEnd,
+  hideControls = false,
 }: {
   videoId: string;
   title?: string | null;
@@ -45,6 +46,7 @@ export function YouTubeMusicPlayer({
   previewDuration?: number;
   clipStart?: number | null;
   clipEnd?: number | null;
+  hideControls?: boolean;
 }) {
   const holderRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
@@ -171,12 +173,13 @@ export function YouTubeMusicPlayer({
           Clip: {fmt(clipStartRef.current || 0)} - {fmt(clipEndRef.current || 0)}
         </div>
       )}
-      {isPreview && (
+      {isPreview && !hideControls && (
         <div className="mb-2 text-xs text-muted-foreground">
           {previewDuration}s preview — drag anywhere to preview that part · {Math.ceil(remaining)}s left
         </div>
       )}
-      <div className="flex items-center gap-3">
+      {!hideControls && (
+        <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={toggle}
@@ -206,6 +209,7 @@ export function YouTubeMusicPlayer({
           {fmt(current)} / {fmt(duration)}
         </span>
       </div>
+      )}
     </div>
   );
 }
