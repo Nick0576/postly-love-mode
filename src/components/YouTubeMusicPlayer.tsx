@@ -35,10 +35,12 @@ export function YouTubeMusicPlayer({
   videoId,
   title,
   autoplay = true,
+  previewDuration = 30,
 }: {
   videoId: string;
   title?: string | null;
   autoplay?: boolean;
+  previewDuration?: number;
 }) {
   const holderRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
@@ -46,6 +48,27 @@ export function YouTubeMusicPlayer({
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [ready, setReady] = useState(false);
+  const [previewStart, setPreviewStart] = useState<number | null>(null);
+  const previewEndRef = useRef<number | null>(null);
+  const previewTimerRef = useRef<number | null>(null);
+
+  const isPreview = previewDuration !== undefined;
+
+  function startPreviewAt(startTime: number) {
+    if (!playerRef.current) return;
+    playerRef.current.seekTo(startTime, true);
+    setCurrent(startTime);
+    setPreviewStart(startTime);
+    previewEndRef.current = startTime + previewDuration;
+    playerRef.current.playVideo();
+  }
+
+  function toggle() {
+    const p = playerRef.current;
+    if (!p) return;
+    if (playing) p.pauseVideo();
+    else p.playVideo();
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -80,6 +103,10 @@ export function YouTubeMusicPlayer({
     })();
     return () => {
       cancelled = true;
+      if (previewTimerRef.current) {
+        window.clearTimeout(previewTimerRef.current);
+        previewTimerRef.current = null;
+      }
       try { playerRef.current?.destroy?.(); } catch { /* noop */ }
       playerRef.current = null;
     };
@@ -89,29 +116,36 @@ export function YouTubeMusicPlayer({
     const id = window.setInterval(() => {
       const p = playerRef.current;
       if (p?.getCurrentTime) {
-        setCurrent(p.getCurrentTime() || 0);
+        const newTime = p.getCurrentTime() || 0;
+        setCurrent(newTime);
         const d = p.getDuration() || 0;
         if (d) setDuration(d);
+        if (isPreview && previewStart !== null && previewEndRef.current !== null) {
+          if (newTime >= previewEndRef.current && playing) {
+            p.pauseVideo();
+          }
+        }
       }
     }, 400);
     return () => window.clearInterval(id);
-  }, []);
+  }, [isPreview, previewStart]);
 
-  function toggle() {
-    const p = playerRef.current;
-    if (!p) return;
-    if (playing) p.pauseVideo();
-    else p.playVideo();
-  }
+  const previewEndTime = previewEndRef.current ?? 0;
+  const remainingPreview = previewEndRef.current ? Math.max(0, previewEndRef.current - current) : 0;
 
   return (
     <div className="w-full rounded-2xl border bg-card p-3 shadow-soft">
       <div ref={holderRef} style={{ width: 0, height: 0, overflow: "hidden" }} />
       {title && <p className="mb-2 truncate text-sm font-medium">🎵 {title}</p>}
+      {isPreview && (
+        <div className="mb-2 text-xs text-muted-foreground">
+          Preview: {Math.round(remainingPreview)}s remaining
+        </div>
+      )}
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={toggle}
+          onClick={isPreview ? () => startPreviewAt(current) : toggle}
           disabled={!ready}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
           aria-label={playing ? "Pause" : "Play"}
@@ -127,7 +161,11 @@ export function YouTubeMusicPlayer({
           onChange={(e) => {
             const t = Number(e.target.value);
             setCurrent(t);
-            playerRef.current?.seekTo(t, true);
+            if (isPreview) {
+              startPreviewAt(t);
+            } else {
+              playerRef.current?.seekTo(t, true);
+            }
           }}
           disabled={!ready || !duration}
           className="flex-1 accent-primary"

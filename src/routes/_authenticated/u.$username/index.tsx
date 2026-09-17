@@ -416,6 +416,7 @@ function ProfilePage() {
                     videoId={data.profile.chat_bubble_music_video_id}
                     title={data.profile.chat_bubble_music_title ?? null}
                     autoplay={true}
+                    previewDuration={30}
                   />
                 </div>
               )}
