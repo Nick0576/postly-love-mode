@@ -66,7 +66,7 @@ function ProfilePage() {
         isMutual: followingSet.has(p.id) && followersSet.has(p.id),
         followingCount: followingCount?.data?.length ?? 0,
         followersCount: followers?.data?.length ?? 0,
-        followsBack: followsBack?.data?.length > 0,
+        followsBack: (followsBack?.data?.length ?? 0) > 0,
         loveMatch,
         isBlocked: !!blocked?.data
       };
@@ -267,7 +267,7 @@ function ProfilePage() {
                 <div className="flex items-center gap-2 mt-1">
                   <Button variant="outline" size="sm" className="h-7" asChild>
                     <Link to="/u/$username/followers" params={{ username: data.profile.username }}>
-                      {data.followers} followers
+                      {data.followersCount} followers
                     </Link>
                   </Button>
                   <Button variant="outline" size="sm" className="h-7" asChild>

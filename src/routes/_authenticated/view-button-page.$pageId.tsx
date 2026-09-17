@@ -117,7 +117,7 @@ function ButtonPageViewer() {
 
         {/* Page Elements */}
         <div className="space-y-3">
-          {elements.map((element: ButtonElement) => (
+          {(elements as unknown as ButtonElement[]).map((element: ButtonElement) => (
             <div key={element.id} className="rounded-2xl border p-4">
               {element.type === 'text' && (
                 <p className="whitespace-pre-wrap">{element.content.text}</p>
