@@ -447,3 +447,108 @@ function Banner({ url }: { url: string }) {
     />
   );
 }
+
+function FavoriteSongs({ userId, isOwner }: { userId: string; isOwner: boolean }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [nowPlaying, setNowPlaying] = useState<{ videoId: string; title: string } | null>(null);
+
+  const { data: songs } = useQuery({
+    queryKey: ["favorite-songs", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("favorite_songs")
+        .select("id,video_id,title")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open,
+  });
+
+  const add = useMutation({
+    mutationFn: async (m: MusicPick) => {
+      const uid = await currentUserId();
+      const { error } = await supabase
+        .from("favorite_songs")
+        .insert({ user_id: uid, video_id: m.videoId, title: m.title });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setAdding(false);
+      void qc.invalidateQueries({ queryKey: ["favorite-songs", userId] });
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("favorite_songs").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["favorite-songs", userId] }),
+  });
+
+  return (
+    <div className="mt-4 rounded-2xl border p-4">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-semibold">🎵 Favorite songs</h3>
+        <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)}>
+          {open ? "Hide" : "Show"}
+        </Button>
+      </div>
+
+      {open && (
+        <div className="mt-3 space-y-3">
+          {isOwner && (
+            adding ? (
+              <div className="space-y-2">
+                <MusicPicker onPick={(m) => add.mutate(m)} />
+                <Button variant="ghost" size="sm" onClick={() => setAdding(false)}>
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" onClick={() => setAdding(true)}>
+                Add song
+              </Button>
+            )
+          )}
+
+          {songs && songs.length > 0 ? (
+            <ul className="space-y-2">
+              {songs.map((s) => (
+                <li key={s.id} className="flex items-center gap-2 rounded-lg border p-2">
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 truncate text-left text-sm"
+                    onClick={() => setNowPlaying({ videoId: s.video_id, title: s.title })}
+                  >
+                    {s.title}
+                  </button>
+                  {isOwner && (
+                    <Button variant="ghost" size="sm" onClick={() => remove.mutate(s.id)}>
+                      Delete
+                    </Button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">No favorite songs yet.</p>
+          )}
+
+          {nowPlaying && (
+            <YouTubeMusicPlayer
+              key={nowPlaying.videoId}
+              videoId={nowPlaying.videoId}
+              title={nowPlaying.title}
+              autoplay={true}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
