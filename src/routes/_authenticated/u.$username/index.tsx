@@ -557,6 +557,7 @@ function FavoriteSongs({ userId, isOwner }: { userId: string; isOwner: boolean }
                 videoId={nowPlaying.videoId}
                 title={nowPlaying.title}
                 autoplay={true}
+                previewDuration={30}
               />
               <Button
                 variant="outline"
