@@ -31,7 +31,11 @@ function fmt(sec: number): string {
   return `${m}:${s}`;
 }
 
-// Preview window starts in the middle of the song rather than at the start.
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
+}
+
+// Middle of the song: where a preview should start playing.
 function midStart(d: number): number {
   if (!d) return 0;
   return Math.min(d / 2, Math.max(0, d - 1));
@@ -45,7 +49,6 @@ export function YouTubeMusicPlayer({
   clipStart,
   clipEnd,
   hideControls = false,
-  noSeek = false,
 }: {
   videoId: string;
   title?: string | null;
@@ -54,10 +57,10 @@ export function YouTubeMusicPlayer({
   clipStart?: number | null;
   clipEnd?: number | null;
   hideControls?: boolean;
-  noSeek?: boolean;
 }) {
   const holderRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
+  const previewStartRef = useRef<number>(0);
   const previewEndRef = useRef<number | null>(null);
   const clipStartRef = useRef<number | null>(clipStart || null);
   const clipEndRef = useRef<number | null>(clipEnd || null);
@@ -68,20 +71,33 @@ export function YouTubeMusicPlayer({
 
   const isPreview = typeof previewDuration === "number" && previewDuration > 0;
   const hasClip = typeof clipStart === "number" && typeof clipEnd === "number";
+  const windowLen = isPreview ? Math.max(1, previewDuration as number) : 1;
 
-  function previewStartFor(d: number): number {
-    return midStart(d);
+  // The playable window: a `previewDuration`-wide slice centered on the
+  // middle of the song, so both the start and the end of the track are cut
+  // off. `d` is the full song length in seconds.
+  function windowBounds(d: number): { start: number; end: number } {
+    const safe = Number.isFinite(d) && d > 0 ? d : duration;
+    if (!safe) return { start: 0, end: windowLen };
+    const center = midStart(safe);
+    let start = clamp(center - windowLen / 2, 0, Math.max(0, safe - windowLen));
+    let end = start + windowLen;
+    if (end > safe) end = safe;
+    start = Math.max(0, Math.min(start, end - 0.5));
+    return { start, end };
   }
 
-  // Start a preview window of `previewDuration` seconds from `startTime`.
-  function playFrom(startTime: number) {
+  // Start playback at the middle, inside the allowed window.
+  function playFromMiddle() {
     const p = playerRef.current;
     if (!p) return;
     const d = p.getDuration?.() || duration || 0;
-    const start = Math.max(0, d ? Math.min(startTime, Math.max(0, d - 0.5)) : startTime);
-    previewEndRef.current = isPreview ? start + (previewDuration as number) : null;
-    p.seekTo(start, true);
-    setCurrent(start);
+    const { start, end } = windowBounds(d);
+    previewStartRef.current = start;
+    previewEndRef.current = end;
+    const seek = midStart(d);
+    p.seekTo(clamp(seek, start, Math.max(start, end - 0.5)), true);
+    setCurrent(clamp(seek, start, Math.max(start, end - 0.5)));
     p.playVideo();
   }
 
@@ -94,18 +110,12 @@ export function YouTubeMusicPlayer({
     }
     if (isPreview) {
       const end = previewEndRef.current;
-      if (noSeek) {
-        // Locked preview: always replay the same window from the middle.
-        if (end === null || current >= end - 0.2) playFrom(previewStartFor(duration));
-        else p.playVideo();
-      } else if (end === null || current >= end - 0.2) {
-        // Restart a fresh preview window when the last one finished.
-        playFrom(current);
+      if (end === null || current >= end - 0.2) {
+        playFromMiddle();
       } else {
         p.playVideo();
       }
     } else if (hasClip) {
-      // For clips, seek to start and play
       p.seekTo(clipStartRef.current || 0, true);
       p.playVideo();
     } else {
@@ -140,10 +150,12 @@ export function YouTubeMusicPlayer({
             setDuration(d);
             if (autoplay) {
               if (isPreview) {
-                const start = previewStartFor(d);
-                previewEndRef.current = start + (previewDuration as number);
-                e.target.seekTo(start, true);
-                setCurrent(start);
+                const { start, end } = windowBounds(d);
+                previewStartRef.current = start;
+                previewEndRef.current = end;
+                const seek = midStart(d);
+                e.target.seekTo(clamp(seek, start, Math.max(start, end - 0.5)), true);
+                setCurrent(clamp(seek, start, Math.max(start, end - 0.5)));
                 e.target.playVideo();
               } else if (hasClip) {
                 e.target.seekTo(clipStartRef.current || 0, true);
@@ -176,8 +188,8 @@ export function YouTubeMusicPlayer({
       setCurrent(t);
       const d = p.getDuration?.() || 0;
       if (d) setDuration(d);
+      // Pause at the end of the preview window so the whole song never plays.
       const end = previewEndRef.current;
-      // The preview window is `previewDuration` seconds long; pause at its end.
       if (isPreview && end !== null && t >= end) {
         p.pauseVideo();
       }
@@ -189,18 +201,15 @@ export function YouTubeMusicPlayer({
     return () => window.clearInterval(id);
   }, [isPreview, hasClip]);
 
-  const end = previewEndRef.current;
-  const inPreview = isPreview && end !== null;
-  const windowStart = inPreview ? end - (previewDuration as number) : 0;
+  const previewStart = previewStartRef.current;
+  const previewEnd = previewEndRef.current;
+  const inPreview = isPreview && previewEnd !== null;
   const windowPos = inPreview
-    ? Math.max(0, Math.min(previewDuration as number, current - windowStart))
+    ? Math.max(0, Math.min(windowLen, current - previewStart))
     : current;
-  const remaining = inPreview
-    ? Math.max(0, (previewDuration as number) - windowPos)
-    : 0;
-  // In locked-preview mode the bar represents only the allowed window so the
-  // song cannot be scrubbed past the 30s limit.
-  const barMax = noSeek && isPreview ? Math.max(0.5, previewDuration as number) : duration || 1;
+  const remaining = inPreview ? Math.max(0, windowLen - windowPos) : 0;
+  const barMin = inPreview ? previewStart : 0;
+  const barMax = inPreview ? Math.max(previewEnd, previewStart + 0.5) : duration || 1;
 
   return (
     <div className="w-full rounded-2xl border bg-card p-3 shadow-soft">
@@ -213,9 +222,7 @@ export function YouTubeMusicPlayer({
       )}
       {isPreview && !hideControls && (
         <div className="mb-2 text-xs text-muted-foreground">
-          {noSeek
-            ? `${previewDuration}s preview · ${Math.ceil(remaining)}s left`
-            : `${previewDuration}s preview — drag anywhere to preview that part · ${Math.ceil(remaining)}s left`}
+          {previewDuration}s preview · {Math.ceil(remaining)}s left
         </div>
       )}
       {!hideControls && (
@@ -231,23 +238,31 @@ export function YouTubeMusicPlayer({
           </button>
           <input
             type="range"
-            min={0}
+            min={barMin}
             max={barMax}
             step={0.1}
-            value={Math.min(windowPos, barMax)}
+            value={clamp(current, barMin, barMax)}
             onChange={(e) => {
               const t = Number(e.target.value);
-              if (noSeek) return;
               setCurrent(t);
-              if (isPreview) playFrom(t);
-              else playerRef.current?.seekTo(t, true);
+              if (isPreview) {
+                // Stay inside the middle window; seeking elsewhere is barred.
+                const end = previewEndRef.current;
+                if (end !== null && t >= end - 0.1) {
+                  playerRef.current?.seekTo(Math.max(previewStart, end - 0.5), true);
+                  return;
+                }
+                playerRef.current?.seekTo(t, true);
+              } else {
+                playerRef.current?.seekTo(t, true);
+              }
             }}
-            disabled={!ready || !duration || noSeek}
+            disabled={!ready || !duration}
             className="flex-1 accent-primary"
             aria-label="Seek"
           />
           <span className="w-20 text-right text-xs tabular-nums text-muted-foreground">
-            {fmt(windowPos)} / {fmt(barMax)}
+            {fmt(windowPos)} / {fmt(inPreview ? windowLen : barMax)}
           </span>
         </div>
       )}

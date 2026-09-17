@@ -553,7 +553,7 @@ function FavoriteSongs({ userId, isOwner }: { userId: string; isOwner: boolean }
 
           {nowPlaying && (
             <div className="space-y-2">
-              <YouTubeMusicPlayer
+<YouTubeMusicPlayer
                 key={nowPlaying.videoId}
                 videoId={nowPlaying.videoId}
                 title={nowPlaying.title}
