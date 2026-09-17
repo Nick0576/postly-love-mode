@@ -31,6 +31,12 @@ function fmt(sec: number): string {
   return `${m}:${s}`;
 }
 
+// Preview window starts in the middle of the song rather than at the start.
+function midStart(d: number): number {
+  if (!d) return 0;
+  return Math.min(d / 2, Math.max(0, d - 1));
+}
+
 export function YouTubeMusicPlayer({
   videoId,
   title,
@@ -39,6 +45,7 @@ export function YouTubeMusicPlayer({
   clipStart,
   clipEnd,
   hideControls = false,
+  noSeek = false,
 }: {
   videoId: string;
   title?: string | null;
@@ -47,6 +54,7 @@ export function YouTubeMusicPlayer({
   clipStart?: number | null;
   clipEnd?: number | null;
   hideControls?: boolean;
+  noSeek?: boolean;
 }) {
   const holderRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
@@ -60,6 +68,10 @@ export function YouTubeMusicPlayer({
 
   const isPreview = typeof previewDuration === "number" && previewDuration > 0;
   const hasClip = typeof clipStart === "number" && typeof clipEnd === "number";
+
+  function previewStartFor(d: number): number {
+    return midStart(d);
+  }
 
   // Start a preview window of `previewDuration` seconds from `startTime`.
   function playFrom(startTime: number) {
@@ -82,9 +94,16 @@ export function YouTubeMusicPlayer({
     }
     if (isPreview) {
       const end = previewEndRef.current;
-      // Restart a fresh 30s window when the last one finished.
-      if (end === null || current >= end - 0.2) playFrom(current);
-      else p.playVideo();
+      if (noSeek) {
+        // Locked preview: always replay the same window from the middle.
+        if (end === null || current >= end - 0.2) playFrom(previewStartFor(duration));
+        else p.playVideo();
+      } else if (end === null || current >= end - 0.2) {
+        // Restart a fresh preview window when the last one finished.
+        playFrom(current);
+      } else {
+        p.playVideo();
+      }
     } else if (hasClip) {
       // For clips, seek to start and play
       p.seekTo(clipStartRef.current || 0, true);
@@ -105,25 +124,33 @@ export function YouTubeMusicPlayer({
         videoId,
         width: "0",
         height: "0",
-        playerVars: { 
-          autoplay: autoplay ? 1 : 0, 
-          controls: 0, 
-          playsinline: 1, 
-          modestbranding: 1, 
+        playerVars: {
+          autoplay: autoplay ? 1 : 0,
+          controls: 0,
+          playsinline: 1,
+          modestbranding: 1,
           rel: 0,
-          start: hasClip ? clipStartRef.current : undefined,
-          end: hasClip ? clipEndRef.current : undefined,
+          start: !isPreview && hasClip ? clipStartRef.current : undefined,
+          end: !isPreview && hasClip ? clipEndRef.current : undefined,
         },
         events: {
           onReady: (e: any) => {
             setReady(true);
-            setDuration(e.target.getDuration() || 0);
+            const d = e.target.getDuration?.() || 0;
+            setDuration(d);
             if (autoplay) {
-              previewEndRef.current = isPreview ? (previewDuration as number) : null;
-              if (hasClip) {
+              if (isPreview) {
+                const start = previewStartFor(d);
+                previewEndRef.current = start + (previewDuration as number);
+                e.target.seekTo(start, true);
+                setCurrent(start);
+                e.target.playVideo();
+              } else if (hasClip) {
                 e.target.seekTo(clipStartRef.current || 0, true);
+                e.target.playVideo();
+              } else {
+                e.target.playVideo();
               }
-              e.target.playVideo();
             }
           },
           onStateChange: (e: any) => {
@@ -139,7 +166,7 @@ export function YouTubeMusicPlayer({
       try { playerRef.current?.destroy?.(); } catch { /* noop */ }
       playerRef.current = null;
     };
-  }, [videoId, autoplay, hasClip]);
+  }, [videoId, autoplay, isPreview, hasClip]);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -150,11 +177,12 @@ export function YouTubeMusicPlayer({
       const d = p.getDuration?.() || 0;
       if (d) setDuration(d);
       const end = previewEndRef.current;
+      // The preview window is `previewDuration` seconds long; pause at its end.
       if (isPreview && end !== null && t >= end) {
         p.pauseVideo();
       }
       // Auto-pause if we reach clip end
-      if (hasClip && clipEndRef.current !== null && t >= clipEndRef.current) {
+      if (!isPreview && hasClip && clipEndRef.current !== null && t >= clipEndRef.current) {
         p.pauseVideo();
       }
     }, 250);
@@ -162,53 +190,66 @@ export function YouTubeMusicPlayer({
   }, [isPreview, hasClip]);
 
   const end = previewEndRef.current;
-  const remaining = isPreview && end !== null ? Math.max(0, end - current) : 0;
+  const inPreview = isPreview && end !== null;
+  const windowStart = inPreview ? end - (previewDuration as number) : 0;
+  const windowPos = inPreview
+    ? Math.max(0, Math.min(previewDuration as number, current - windowStart))
+    : current;
+  const remaining = inPreview
+    ? Math.max(0, (previewDuration as number) - windowPos)
+    : 0;
+  // In locked-preview mode the bar represents only the allowed window so the
+  // song cannot be scrubbed past the 30s limit.
+  const barMax = noSeek && isPreview ? Math.max(0.5, previewDuration as number) : duration || 1;
 
   return (
     <div className="w-full rounded-2xl border bg-card p-3 shadow-soft">
       <div ref={holderRef} style={{ width: 0, height: 0, overflow: "hidden" }} />
       {title && <p className="mb-2 truncate text-sm font-medium">🎵 {title}</p>}
-      {hasClip && (
+      {hasClip && !isPreview && (
         <div className="mb-2 text-xs text-muted-foreground">
           Clip: {fmt(clipStartRef.current || 0)} - {fmt(clipEndRef.current || 0)}
         </div>
       )}
       {isPreview && !hideControls && (
         <div className="mb-2 text-xs text-muted-foreground">
-          {previewDuration}s preview — drag anywhere to preview that part · {Math.ceil(remaining)}s left
+          {noSeek
+            ? `${previewDuration}s preview · ${Math.ceil(remaining)}s left`
+            : `${previewDuration}s preview — drag anywhere to preview that part · ${Math.ceil(remaining)}s left`}
         </div>
       )}
       {!hideControls && (
         <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={toggle}
-          disabled={!ready}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
-          aria-label={playing ? "Pause" : "Play"}
-        >
-          {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-        </button>
-        <input
-          type="range"
-          min={0}
-          max={duration || 1}
-          step={0.1}
-          value={Math.min(current, duration || 0)}
-          onChange={(e) => {
-            const t = Number(e.target.value);
-            setCurrent(t);
-            if (isPreview) playFrom(t);
-            else playerRef.current?.seekTo(t, true);
-          }}
-          disabled={!ready || !duration}
-          className="flex-1 accent-primary"
-          aria-label="Seek"
-        />
-        <span className="w-20 text-right text-xs tabular-nums text-muted-foreground">
-          {fmt(current)} / {fmt(duration)}
-        </span>
-      </div>
+          <button
+            type="button"
+            onClick={toggle}
+            disabled={!ready}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
+            aria-label={playing ? "Pause" : "Play"}
+          >
+            {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={barMax}
+            step={0.1}
+            value={Math.min(windowPos, barMax)}
+            onChange={(e) => {
+              const t = Number(e.target.value);
+              if (noSeek) return;
+              setCurrent(t);
+              if (isPreview) playFrom(t);
+              else playerRef.current?.seekTo(t, true);
+            }}
+            disabled={!ready || !duration || noSeek}
+            className="flex-1 accent-primary"
+            aria-label="Seek"
+          />
+          <span className="w-20 text-right text-xs tabular-nums text-muted-foreground">
+            {fmt(windowPos)} / {fmt(barMax)}
+          </span>
+        </div>
       )}
     </div>
   );
