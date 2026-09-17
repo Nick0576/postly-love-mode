@@ -8,11 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MusicPicker, type MusicPick } from "@/components/MusicPicker";
-import { MusicClipSelector } from "@/components/MusicClipSelector";
-import type { MusicClipPick } from "@/components/MusicClipSelector";
-import type { MusicClipPick } from "@/components/MusicClipSelector";
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, uploadMedia, type Profile, getChatBubbleFromStorage, saveChatBubbleToStorage, unblockUser, getBlockedUsers,  } from "@/lib/postly";
+import { currentUserId, uploadMedia, type Profile, getChatBubbleFromStorage, saveChatBubbleToStorage, unblockUser, getBlockedUsers } from "@/lib/postly";
 import { applyTheme, getTheme, setTheme, type Theme } from "@/lib/theme";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -43,11 +40,6 @@ function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const taps = useRef(0);
-  const [chatBubbleMusicTitle, setChatBubbleMusicTitle] = useState("");
-  const [profileViewHistoryEnabled, setProfileViewHistoryEnabled] = useState(true);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const taps = useRef(0);
 
   useEffect(() => {
     const theme = getTheme();
@@ -62,7 +54,7 @@ function SettingsPage() {
         const uid = await currentUserId();
         const { data, error } = await supabase
           .from("profiles")
-          .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,chat_bubble_music_video_id,chat_bubble_music_title,profile_view_history_enabled")
+          .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,chat_bubble_music_video_id,chat_bubble_music_title,chat_bubble_music_clip_start,chat_bubble_music_clip_end,profile_view_history_enabled")
           .eq("id", uid)
           .maybeSingle();
         if (error) throw error;
@@ -81,8 +73,6 @@ function SettingsPage() {
         setChatBubbleMusicTitle(p?.chat_bubble_music_title ?? "");
         setChatBubbleMusicClipStart(p?.chat_bubble_music_clip_start ?? null);
         setChatBubbleMusicClipEnd(p?.chat_bubble_music_clip_end ?? null);
-        setProfileViewHistoryEnabled(p?.profile_view_history_enabled ?? true);
-        setChatBubbleMusicTitle(p?.chat_bubble_music_title ?? "");
         setProfileViewHistoryEnabled(p?.profile_view_history_enabled ?? true);
         return p;
       } catch (e) {
@@ -132,34 +122,6 @@ function SettingsPage() {
           chat_bubble_music_title: chatBubbleMusicTitle,
           chat_bubble_music_clip_start: chatBubbleMusicClipStart,
           chat_bubble_music_clip_end: chatBubbleMusicClipEnd,
-          profile_view_history_enabled: profileViewHistoryEnabled,
-          ...(avatar_url && !isBanner ? { avatar_url } : {}),
-          ...(avatar_url && isBanner ? { banner_url: avatar_url } : {})
-        })
-        .eq("id", me.id);
-        .from("profiles")
-        .update({ 
-          display_name: name, 
-          bio, 
-          chat_bubble_text: chatBubbleText,
-          chat_bubble_enabled: chatBubbleEnabled,
-          chat_bubble_music_video_id: chatBubbleMusicVideoId,
-          chat_bubble_music_title: chatBubbleMusicTitle,
-          chat_bubble_music_clip_start: chatBubbleMusicClipStart,
-          chat_bubble_music_clip_end: chatBubbleMusicClipEnd,
-          profile_view_history_enabled: profileViewHistoryEnabled,
-          ...(avatar_url && !isBanner ? { avatar_url } : {}),
-          ...(avatar_url && isBanner ? { banner_url: avatar_url } : {})
-        })
-        .eq("id", me.id);
-        .from("profiles")
-        .update({ 
-          display_name: name, 
-          bio, 
-          chat_bubble_text: chatBubbleText,
-          chat_bubble_enabled: chatBubbleEnabled,
-          chat_bubble_music_video_id: chatBubbleMusicVideoId,
-          chat_bubble_music_title: chatBubbleMusicTitle,
           profile_view_history_enabled: profileViewHistoryEnabled,
           ...(avatar_url && !isBanner ? { avatar_url } : {}),
           ...(avatar_url && isBanner ? { banner_url: avatar_url } : {})
@@ -290,32 +252,10 @@ function SettingsPage() {
                 </Button>
               </div>
             ) : (
-              <MusicClipSelector 
-                onPick={(m: MusicClipPick) => {
-                  setChatBubbleMusicVideoId(m.videoId);
-                  setChatBubbleMusicTitle(m.title);
-                  setChatBubbleMusicClipStart(m.clipStart);
-                  setChatBubbleMusicClipEnd(m.clipEnd);
-                  void save();
-                }}
-                defaultStart={0}
-                defaultEnd={30}
-              />
-            )}
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">{chatBubbleMusicTitle}</p>
-                <Button variant="outline" size="sm" onClick={() => {
-                  setChatBubbleMusicVideoId("");
-                  setChatBubbleMusicTitle("");
-                  void save();
-                }}>
-                  Remove Music
-                </Button>
-              </div>
-            ) : (
               <MusicPicker onPick={(m: MusicPick) => {
                 setChatBubbleMusicVideoId(m.videoId);
                 setChatBubbleMusicTitle(m.title);
+                void save();
               }} />
             )}
           </div>
@@ -405,7 +345,6 @@ function SettingsPage() {
             onClick={async () => {
               if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
                 const uid = await currentUserId();
-                // Delete all user data
                 await supabase.from("stories").delete().eq("user_id", uid);
                 await supabase.from("posts").delete().eq("user_id", uid);
                 await supabase.from("messages").delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`);
