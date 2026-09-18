@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN favorite_games text[] DEFAULT '{}';

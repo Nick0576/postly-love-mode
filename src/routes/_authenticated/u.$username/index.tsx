@@ -42,7 +42,7 @@ function ProfilePage() {
       const me = await currentUserId();
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,chat_bubble_music_video_id,chat_bubble_music_title,last_seen,is_online,profile_view_history_enabled")
+        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,chat_bubble_music_video_id,chat_bubble_music_title,favorite_games,last_seen,is_online,profile_view_history_enabled")
         .eq("username", username)
         .maybeSingle();
       if (!profile) return null;
@@ -78,7 +78,8 @@ function ProfilePage() {
         followersCount: followers?.data?.length ?? 0,
         followsBack: (followsBack?.data?.length ?? 0) > 0,
         loveMatch,
-        isBlocked: !!blocked?.data
+        isBlocked: !!blocked?.data,
+        favoriteGames: p.favorite_games ?? []
       };
     },
   });
@@ -292,6 +293,15 @@ function ProfilePage() {
               </div>
             </div>
             {data.profile.bio && <p className="mt-3 text-sm">{data.profile.bio}</p>}
+            {data.favoriteGames && data.favoriteGames.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {data.favoriteGames.map((game) => (
+                  <span key={game} className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                    🎮 {game}
+                  </span>
+                ))}
+              </div>
+            )}
             {data.me !== data.profile.id && (
               <div className="mt-4 flex gap-2 flex-wrap">
                 <Button onClick={() => toggle.mutate()} variant={data.isFollowing ? "outline" : "default"}>
