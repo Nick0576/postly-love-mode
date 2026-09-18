@@ -36,15 +36,16 @@ function ProfilePage() {
     applyTheme(getTheme());
   }, []);
 
-  const { data } = useQuery({
+  const { data, error: profileError, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", username],
     queryFn: async () => {
       const me = await currentUserId();
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,chat_bubble_music_video_id,chat_bubble_music_title,favorite_games,last_seen,is_online,profile_view_history_enabled")
+        .select("*")
         .eq("username", username)
         .maybeSingle();
+      if (error) throw error;
       if (!profile) return null;
       const p = profile as Profile;
       const [posts, following, followers, followingCount, followsBack, loveAnswers, myLoveAnswers, blocked] = await Promise.all([
@@ -234,6 +235,24 @@ function ProfilePage() {
     }
   }, [data]);
 
+  if (profileLoading) {
+    return (
+      <AppShell title="Profile">
+        <p className="text-sm text-muted-foreground">Loading profile...</p>
+      </AppShell>
+    );
+  }
+
+  if (profileError) {
+    const msg = profileError instanceof Error ? profileError.message : ((profileError as { message?: string })?.message ?? String(profileError));
+    return (
+      <AppShell title="Profile">
+        <p className="text-sm text-red-600">Error loading profile: {msg}</p>
+        <p className="text-xs text-muted-foreground mt-2">If this mentions favorite_games, the database migration has not been applied yet. Run pnpm db:migrate.</p>
+      </AppShell>
+    );
+  }
+
   if (data === null) {
     return (
       <AppShell title="Profile">
@@ -242,8 +261,16 @@ function ProfilePage() {
     );
   }
 
+  if (!data || !data.profile) {
+    return (
+      <AppShell title="Profile">
+        <p className="text-sm text-muted-foreground">No profile data.</p>
+      </AppShell>
+    );
+  }
+
   return (
-    <AppShell title={data?.profile ? `@${data.profile.username}` : "Profile"}>
+    <AppShell title={`@${data.profile.username}`}>
       {data && data.profile && (
         <>
           <div className="rounded-2xl border p-4 shadow-soft">

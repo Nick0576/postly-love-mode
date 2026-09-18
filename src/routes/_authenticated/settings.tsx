@@ -61,6 +61,7 @@ function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const taps = useRef(0);
   const hasClipColumnsRef = useRef(true);
+  const hasFavoriteGamesRef = useRef(true);
 
   useEffect(() => {
     const theme = getTheme();
@@ -84,6 +85,7 @@ function SettingsPage() {
         // 20260917_add_music_clip_to_profiles.sql; skip them in the update
         // payload until the migration has been applied to the database.
         hasClipColumnsRef.current = p ? "chat_bubble_music_clip_start" in p : false;
+        hasFavoriteGamesRef.current = p ? "favorite_games" in p : false;
         setName(p?.display_name ?? "");
         setBio(p?.bio ?? "");
         
@@ -147,7 +149,6 @@ function SettingsPage() {
           chat_bubble_music_video_id: chatBubbleMusicVideoId,
           chat_bubble_music_title: chatBubbleMusicTitle,
           profile_view_history_enabled: profileViewHistoryEnabled,
-          favorite_games: favoriteGames,
           ...(avatar_url && !isBanner ? { avatar_url } : {}),
           ...(avatar_url && isBanner ? { banner_url: avatar_url } : {}),
           // Music-clip columns are added by migration
@@ -159,6 +160,7 @@ function SettingsPage() {
                 chat_bubble_music_clip_end: chatBubbleMusicClipEnd,
               }
             : {}),
+          ...(hasFavoriteGamesRef.current ? { favorite_games: favoriteGames } : {}),
         })
         .eq("id", me.id);
       
