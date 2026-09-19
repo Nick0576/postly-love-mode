@@ -8,11 +8,31 @@ import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/PostCard";
 import { YouTubeMusicPlayer } from "@/components/YouTubeMusicPlayer";
 import { MusicPicker, type MusicPick } from "@/components/MusicPicker";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, signedUrl, type Profile, isUserOnline, recordProfileView, getProfileViews, timeAgo, cleanupOldProfileViews, blockUser, unblockUser, isUserBlocked } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 import type { PostRow } from "@/lib/postly";
 import { POST_SELECT } from "@/lib/postly";
+
+const PRESET_GAMES = [
+  "Minecraft",
+  "Roblox",
+  "Genshin Impact",
+  "Mobile Legends",
+  "Fortnite",
+  "PUBG",
+  "Call of Duty",
+  "Free Fire",
+  "Among Us",
+  "Pokémon",
+  "Silver Palace",
+  "Until Then",
+  "Leaflet Love Story",
+  "I Fell in Love With the Girl Next to Me",
+  "Sekaira",
+];
 
 export const Route = createFileRoute("/_authenticated/u/$username/")({
   head: () => ({
@@ -30,6 +50,9 @@ function ProfilePage() {
   const { username } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [editingGames, setEditingGames] = useState(false);
+  const [favoriteGames, setFavoriteGames] = useState<string[]>([]);
+  const [newGameInput, setNewGameInput] = useState<string | "">("");
   const [showBubbleOverlay, setShowBubbleOverlay] = useState(false);
 
   useEffect(() => {
@@ -204,6 +227,21 @@ function ProfilePage() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
   });
 
+  const saveFavoriteGames = useMutation({
+    mutationFn: async (games: string[]) => {
+      if (!data) return;
+      const { error } = await supabase
+        .from("profiles")
+        .update({ favorite_games: games })
+        .eq("id", data.me);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["profile", username] });
+      setEditingGames(false);
+    },
+  });
+
   useEffect(() => {
     if (data && data.profile && data.me !== data.profile.id) {
       void recordProfileView(data.profile.id);
@@ -333,7 +371,7 @@ function ProfilePage() {
               </div>
             </div>
             {data.profile.bio && <p className="mt-3 text-sm">{data.profile.bio}</p>}
-            {data.favoriteGames && data.favoriteGames.length > 0 && (
+            {data.favoriteGames && data.favoriteGames.length > 0 && !editingGames && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {data.favoriteGames.map((game) => (
                   <span key={game} className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
@@ -341,6 +379,67 @@ function ProfilePage() {
                   </span>
                 ))}
               </div>
+            )}
+            {editingGames && data.me === data.profile.id && (
+              <div className="mt-3 space-y-3">
+                <div className="space-y-2">
+                  <Label>Add Custom Game</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newGameInput}
+                      onChange={(e) => setNewGameInput(e.target.value)}
+                      placeholder="Type game name..."
+                      maxLength={50}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const trimmed = newGameInput.trim();
+                        if (trimmed && !favoriteGames.includes(trimmed)) {
+                          setFavoriteGames([...favoriteGames, trimmed]);
+                          setNewGameInput("");
+                        }
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Preset Games</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {PRESET_GAMES.map((game) => (
+                      <Button
+                        key={game}
+                        variant={favoriteGames.includes(game) ? "default" : "outline"}
+                        size="sm"
+                        className="rounded-full"
+                        onClick={() => {
+                          const updated = favoriteGames.includes(game)
+                            ? favoriteGames.filter((g) => g !== game)
+                            : [...favoriteGames, game];
+                          setFavoriteGames(updated);
+                        }}
+                      >
+                        {game}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => saveFavoriteGames.mutate(favoriteGames)}>Save</Button>
+                  <Button variant="outline" onClick={() => setEditingGames(false)}>Cancel</Button>
+                </div>
+              </div>
+            )}
+            {!editingGames && data.me === data.profile.id && (
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => {
+                setFavoriteGames(data.favoriteGames || []);
+                setEditingGames(true);
+              }}>
+                Edit Games
+              </Button>
             )}
             {data.me !== data.profile.id && (
               <div className="mt-4 flex gap-2 flex-wrap">

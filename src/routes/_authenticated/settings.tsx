@@ -12,24 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, uploadMedia, type Profile, getChatBubbleFromStorage, saveChatBubbleToStorage, unblockUser, getBlockedUsers } from "@/lib/postly";
 import { applyTheme, getTheme, setTheme, type Theme } from "@/lib/theme";
 
-const PRESET_GAMES = [
-  "Minecraft",
-  "Roblox",
-  "Genshin Impact",
-  "Mobile Legends",
-  "Fortnite",
-  "PUBG",
-  "Call of Duty",
-  "Free Fire",
-  "Among Us",
-  "Pokémon",
-  "Silver Palace",
-  "Until Then",
-  "Leaflet Love Story",
-  "I Fell in Love With the Girl Next to Me",
-  "Sekaira",
-];
-
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
@@ -55,13 +37,10 @@ function SettingsPage() {
   const [chatBubbleMusicClipStart, setChatBubbleMusicClipStart] = useState<number | null>(null);
   const [chatBubbleMusicClipEnd, setChatBubbleMusicClipEnd] = useState<number | null>(null);
   const [profileViewHistoryEnabled, setProfileViewHistoryEnabled] = useState(true);
-  const [favoriteGames, setFavoriteGames] = useState<string[]>([]);
-  const [newGameInput, setNewGameInput] = useState<string | "">("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const taps = useRef(0);
   const hasClipColumnsRef = useRef(true);
-  const hasFavoriteGamesRef = useRef(true);
 
   useEffect(() => {
     const theme = getTheme();
@@ -85,7 +64,6 @@ function SettingsPage() {
         // 20260917_add_music_clip_to_profiles.sql; skip them in the update
         // payload until the migration has been applied to the database.
         hasClipColumnsRef.current = p ? "chat_bubble_music_clip_start" in p : false;
-        hasFavoriteGamesRef.current = p ? "favorite_games" in p : false;
         setName(p?.display_name ?? "");
         setBio(p?.bio ?? "");
         
@@ -163,7 +141,6 @@ function SettingsPage() {
                 chat_bubble_music_clip_end: chatBubbleMusicClipEnd,
               }
             : {}),
-          ...(hasFavoriteGamesRef.current ? { favorite_games: favoriteGames } : {}),
         })
         .eq("id", me.id);
       
@@ -305,59 +282,6 @@ function SettingsPage() {
             )}
           </div>
                     <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
-        </section>
-
-        <section className="space-y-3 rounded-2xl border p-4">
-          <h2 className="font-semibold">Favorite Games</h2>
-          <p className="text-xs text-muted-foreground">Select or unselect games to show on your profile. You can also add custom games.</p>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">Add Custom Game</label>
-            <div className="flex gap-2">
-              <Input
-                value={newGameInput}
-                onChange={(e) => setNewGameInput(e.target.value)}
-                placeholder="Type game name here..."
-                maxLength={50}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const trimmed = newGameInput.trim();
-                  if (trimmed && !favoriteGames.includes(trimmed)) {
-                    setFavoriteGames([...favoriteGames, trimmed]);
-                    setNewGameInput("");
-                  }
-                }}
-              >
-                Add
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">Preset Games</label>
-            <div className="flex flex-wrap gap-2">
-              {PRESET_GAMES.map((game) => (
-                <Button
-                  key={game}
-                  variant={favoriteGames.includes(game) ? "default" : "outline"}
-                  size="sm"
-                  className="rounded-full"
-                  onClick={() => {
-                    const updated = favoriteGames.includes(game)
-                      ? favoriteGames.filter((g) => g !== game)
-                      : [...favoriteGames, game];
-                    setFavoriteGames(updated);
-                  }}
-                >
-                  {game}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
         </section>
 
         <section className="space-y-3 rounded-2xl border p-4">
