@@ -171,6 +171,8 @@ function SettingsPage() {
       
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
+      void qc.invalidateQueries({ queryKey: ["me"] });
+      void qc.invalidateQueries({ queryKey: ["profile"] });
     } catch (e) {
       console.error("Failed to save profile:", e);
       alert("Failed to save profile. Please try again.");
