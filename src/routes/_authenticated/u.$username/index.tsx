@@ -229,16 +229,23 @@ function ProfilePage() {
 
   const saveFavoriteGames = useMutation({
     mutationFn: async (games: string[]) => {
+      console.log("Saving favorite games:", games);
       if (!data) return;
       const { error } = await supabase
         .from("profiles")
         .update({ favorite_games: games })
         .eq("id", data.me);
+      console.log("Save error:", error);
       if (error) throw error;
     },
     onSuccess: () => {
+      console.log("Save successful");
       void qc.invalidateQueries({ queryKey: ["profile", username] });
       setEditingGames(false);
+    },
+    onError: (error) => {
+      console.error("Save failed:", error);
+      alert("Failed to save favorite games: " + (error instanceof Error ? error.message : String(error)));
     },
   });
 
@@ -428,8 +435,19 @@ function ProfilePage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={() => saveFavoriteGames.mutate(favoriteGames)}>Save</Button>
-                  <Button variant="outline" onClick={() => setEditingGames(false)}>Cancel</Button>
+                  <Button 
+                    onClick={() => saveFavoriteGames.mutate(favoriteGames)}
+                    disabled={saveFavoriteGames.isPending}
+                  >
+                    {saveFavoriteGames.isPending ? "Saving..." : "Save"}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setEditingGames(false)}
+                    disabled={saveFavoriteGames.isPending}
+                  >
+                    Cancel
+                  </Button>
                 </div>
               </div>
             )}
