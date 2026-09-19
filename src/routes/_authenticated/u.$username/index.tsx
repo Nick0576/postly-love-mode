@@ -47,7 +47,7 @@ function ProfilePage() {
       if (!profile) return null;
       const p = profile as Profile;
       const [posts, following, followers, followingCount, followsBack, loveAnswers, blocked] = await Promise.all([
-        supabase.from("posts").select(`${POST_SELECT},buttons(*)`).eq("user_id", p.id).order("is_pinned", { ascending: false }).order("created_at", { ascending: false }).limit(20),
+        supabase.from("posts").select(POST_SELECT).eq("user_id", p.id).order("is_pinned", { ascending: false }).order("created_at", { ascending: false }).limit(20),
         supabase.from("follows").select("following_id").eq("follower_id", me),
         supabase.from("follows").select("follower_id").eq("following_id", me),
         supabase.from("follows").select("follower_id").eq("following_id", p.id),
@@ -355,7 +355,6 @@ function ProfilePage() {
               <PostCard
                 key={p.id}
                 post={p}
-                button={(p as any).buttons?.[0]}
                 onDelete={
                   data.me === data.profile.id
                     ? () => {
