@@ -321,7 +321,6 @@ function SettingsPage() {
                   if (trimmed && !favoriteGames.includes(trimmed)) {
                     setFavoriteGames([...favoriteGames, trimmed]);
                     setNewGameInput("");
-                    void save();
                   }
                 }}
               >
@@ -344,7 +343,6 @@ function SettingsPage() {
                       ? favoriteGames.filter((g) => g !== game)
                       : [...favoriteGames, game];
                     setFavoriteGames(updated);
-                    void save();
                   }}
                 >
                   {game}
@@ -352,6 +350,7 @@ function SettingsPage() {
               ))}
             </div>
           </div>
+          <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
         </section>
 
         <section className="space-y-3 rounded-2xl border p-4">
