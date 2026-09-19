@@ -1,24 +1,28 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Search, PlusSquare, MessageSquare, Settings, RefreshCw, Bot, X, Archive } from "lucide-react";
+import { Home, Search, PlusSquare, MessageSquare, Settings, RefreshCw, Bot, X, Archive, ChevronRight, ChevronLeft } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState, useRef } from "react";
 import icon from "@/assets/postly-icon.png.asset.json";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
 import { Button } from "@/components/ui/button";
 
-const items = [
+const mainItems = [
   { to: "/feed", label: "Home", Icon: Home },
   { to: "/search", label: "Search", Icon: Search },
   { to: "/compose", label: "Post", Icon: PlusSquare },
-  { to: "/messages", label: "Chats", Icon: MessageSquare },
-  { to: "/archive", label: "Archive", Icon: Archive },
+  { to: "/messages", label: "Chat", Icon: MessageSquare },
   { to: "/settings", label: "Settings", Icon: Settings },
+] as const;
+
+const extraItems = [
+  { to: "/archive", label: "Archive", Icon: Archive },
 ] as const;
 
 export function AppShell({ title, children, headerAction }: { title: ReactNode; children: ReactNode; headerAction?: ReactNode }) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [navExpanded, setNavExpanded] = useState(false);
   const startY = useRef(0);
   const isPulling = useRef(false);
 
@@ -74,7 +78,7 @@ export function AppShell({ title, children, headerAction }: { title: ReactNode; 
       <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-xl items-center justify-between px-4 py-2">
           <div className="flex items-center gap-1">
-            {items.slice(0, 4).map(({ to, label, Icon }) => (
+            {mainItems.map(({ to, label, Icon }) => (
               <Link
                 key={to}
                 to={to}
@@ -87,34 +91,41 @@ export function AppShell({ title, children, headerAction }: { title: ReactNode; 
               </Link>
             ))}
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setAiModalOpen(true)}
-              className="flex flex-col items-center gap-1 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 p-2 text-white shadow-lg hover:scale-105 transition-transform"
-              style={{ marginTop: '-24px' }}
-            >
-              <Bot className="h-6 w-6" />
-            </button>
-            <Link
-              to="/archive"
-              activeProps={{ className: "text-primary" }}
-              inactiveProps={{ className: "text-muted-foreground" }}
-              className="flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-xs"
-            >
-              <Archive className="h-5 w-5" />
-              Archive
-            </Link>
-            <Link
-              to="/settings"
-              activeProps={{ className: "text-primary" }}
-              inactiveProps={{ className: "text-muted-foreground" }}
-              className="flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-xs"
-            >
-              <Settings className="h-5 w-5" />
-              Settings
-            </Link>
-          </div>
+          <button
+            onClick={() => setNavExpanded(!navExpanded)}
+            className="flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-xs text-muted-foreground"
+          >
+            {navExpanded ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+          </button>
         </div>
+
+        {/* Expanded Menu */}
+        {navExpanded && (
+          <div className="absolute bottom-full left-0 right-0 border-t bg-background/95 backdrop-blur p-2">
+            <div className="mx-auto flex max-w-xl items-center justify-around gap-2">
+              <button
+                onClick={() => setAiModalOpen(true)}
+                className="flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-xs text-muted-foreground"
+              >
+                <Bot className="h-5 w-5" />
+                AI
+              </button>
+              {extraItems.map(({ to, label, Icon }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  activeProps={{ className: "text-primary" }}
+                  inactiveProps={{ className: "text-muted-foreground" }}
+                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-xs"
+                  onClick={() => setNavExpanded(false)}
+                >
+                  <Icon className="h-5 w-5" />
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* AI Modal */}
