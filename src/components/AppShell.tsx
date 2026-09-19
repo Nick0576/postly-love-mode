@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Search, PlusSquare, MessageSquare, Settings, RefreshCw } from "lucide-react";
+import { Home, Search, PlusSquare, MessageSquare, Settings, RefreshCw, Bot, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState, useRef } from "react";
 import icon from "@/assets/postly-icon.png.asset.json";
 import { AccountSwitcher } from "@/components/AccountSwitcher";
+import { Button } from "@/components/ui/button";
 
 const items = [
   { to: "/feed", label: "Home", Icon: Home },
@@ -16,6 +17,7 @@ const items = [
 export function AppShell({ title, children, headerAction }: { title: ReactNode; children: ReactNode; headerAction?: ReactNode }) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
   const startY = useRef(0);
   const isPulling = useRef(false);
 
@@ -69,21 +71,80 @@ export function AppShell({ title, children, headerAction }: { title: ReactNode; 
       </header>
       <main className="mx-auto w-full max-w-xl px-4 pb-28 pt-4">{children}</main>
       <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-xl items-center justify-around px-2 py-2">
-          {items.map(({ to, label, Icon }) => (
+        <div className="mx-auto flex max-w-xl items-center justify-between px-4 py-2">
+          <div className="flex items-center gap-1">
+            {items.slice(0, 4).map(({ to, label, Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                activeProps={{ className: "text-primary" }}
+                inactiveProps={{ className: "text-muted-foreground" }}
+                className="flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-xs"
+              >
+                <Icon className="h-5 w-5" />
+                {label}
+              </Link>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setAiModalOpen(true)}
+              className="flex flex-col items-center gap-1 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 p-2 text-white shadow-lg hover:scale-105 transition-transform"
+              style={{ marginTop: '-24px' }}
+            >
+              <Bot className="h-6 w-6" />
+            </button>
             <Link
-              key={to}
-              to={to}
+              to="/settings"
               activeProps={{ className: "text-primary" }}
               inactiveProps={{ className: "text-muted-foreground" }}
               className="flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-xs"
             >
-              <Icon className="h-5 w-5" />
-              {label}
+              <Settings className="h-5 w-5" />
+              Settings
             </Link>
-          ))}
+          </div>
         </div>
       </nav>
+
+      {/* AI Modal */}
+      {aiModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAiModalOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl border bg-background p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Ask Seeklina</h2>
+              <Button variant="ghost" size="icon" onClick={() => setAiModalOpen(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="space-y-4">
+              <div className="rounded-lg border p-4">
+                <h3 className="font-semibold mb-2">Free</h3>
+                <a
+                  href="https://baybayin-ai-chat.lovable.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  baybayin-ai-chat.lovable.app
+                </a>
+              </div>
+              <div className="rounded-lg border p-4">
+                <h3 className="font-semibold mb-2">Paid - ₱80</h3>
+                <p className="text-sm text-muted-foreground mb-2">Chat me on Facebook Messenger to get it</p>
+                <a
+                  href="https://www.facebook.com/profile.php?id=61575424813244"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  https://www.facebook.com/profile.php?id=61575424813244
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
