@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
-import { Avatar } from "@/components/Media";
+import { Avatar, Media } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId } from "@/lib/postly";
@@ -117,7 +117,7 @@ function ButtonPageViewer() {
 
         {/* Page Elements */}
         <div className="space-y-3">
-          {elements.map((element: ButtonElement) => (
+          {(elements as unknown as ButtonElement[]).map((element: ButtonElement) => (
             <div key={element.id} className="rounded-2xl border p-4">
               {element.type === 'text' && (
                 <p className="whitespace-pre-wrap">{element.content.text}</p>
@@ -126,9 +126,8 @@ function ButtonPageViewer() {
               {element.type === 'image' && (
                 <div className="space-y-2">
                   {element.content.url && (
-                    <img
-                      src={element.content.url}
-                      alt={element.content.caption || 'Image'}
+                    <Media
+                      path={element.content.url}
                       className="max-w-full rounded-lg"
                     />
                   )}

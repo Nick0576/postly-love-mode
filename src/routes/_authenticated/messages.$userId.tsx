@@ -5,12 +5,12 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, Video, Send, X, Edit2, ImagePlus, Smile, FileImage } from "lucide-react";
+import { Mic, Video, Send, X, Edit2, ImagePlus, Smile, FileImage, Palette } from "lucide-react";
 import { GifPicker } from "@/components/GifPicker";
 
 const STICKERS = ["😀","😂","🥰","😍","😎","🤔","😭","😡","👍","👎","🙏","👏","🔥","💯","🎉","✨","❤️","💔","💕","🌹","🐱","🐶","🍕","☕","🌙","⭐","🎵","⚽","🎮","🚀","🌈","💎"];
 import { supabase } from "@/integrations/supabase/client";
-import { currentUserId, uploadMedia, signedUrl, type Profile, editMessage } from "@/lib/postly";
+import { currentUserId, uploadMedia, signedUrl, type Profile, editMessage, getChatBackground, saveChatBackground, CHAT_BACKGROUNDS } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
 
 type Msg = { id: string; sender_id: string; content: string; media_url: string | null; media_type: string | null; created_at: string };
@@ -55,9 +55,12 @@ function Chat() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<number | null>(null);
+  const [chatBg, setChatBg] = useState<string | null>(null);
+  const [showBgPicker, setShowBgPicker] = useState(false);
 
   useEffect(() => {
     applyTheme(getTheme());
+    getChatBackground("dm", userId).then(setChatBg);
   }, []);
 
   const { data } = useQuery({
@@ -277,6 +280,13 @@ function Chat() {
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => setShowBgPicker(!showBgPicker)}
+          >
+            <Palette className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={startVideoCall}
           >
             <Video className="h-4 w-4" />
@@ -296,7 +306,39 @@ function Chat() {
         </div>
       }
     >
-      <div className="space-y-2">
+      {showBgPicker && (
+        <div className="relative z-[2] mb-4 p-3 rounded-xl border bg-background space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground">Chat Background</p>
+          <div className="grid grid-cols-5 gap-2">
+            {CHAT_BACKGROUNDS.map((bg) => (
+              <button
+                key={bg.id}
+                type="button"
+                onClick={() => {
+                  setChatBg(bg.path);
+                  void saveChatBackground("dm", userId, bg.path);
+                  setShowBgPicker(false);
+                }}
+                className={`relative overflow-hidden rounded-lg border-2 transition-all aspect-square ${
+                  chatBg === bg.path ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40"
+                }`}
+              >
+                {bg.path ? (
+                  <img src={bg.path} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background text-[10px] font-medium text-muted-foreground">
+                    Default
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {chatBg && (
+        <img src={chatBg} alt="" className="fixed inset-0 z-0 h-full w-full object-cover" aria-hidden="true" />
+      )}
+      <div className="relative z-[1] space-y-2">
         {data?.msgs.map((m) => (
           <div
             key={m.id}
@@ -372,7 +414,7 @@ function Chat() {
           ))}
         </div>
       )}
-      <div className="fixed inset-x-0 bottom-16 mx-auto flex max-w-xl flex-col gap-2 bg-background px-4 py-3">
+      <div className="fixed inset-x-0 bottom-16 z-10 mx-auto flex max-w-xl flex-col gap-2 bg-background px-4 py-3">
         <div className="flex gap-2">
           <input
             ref={fileRef}

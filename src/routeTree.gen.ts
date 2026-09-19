@@ -20,9 +20,11 @@ import { Route as AuthenticatedLoveRouteImport } from './routes/_authenticated/l
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedStoryRouteImport } from './routes/_authenticated/story'
+import { Route as AuthenticatedButtonPagePageIdRouteImport } from './routes/_authenticated/button-page.$pageId'
 import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated/messages.index'
 import { Route as AuthenticatedMessagesUserIdRouteImport } from './routes/_authenticated/messages.$userId'
 import { Route as AuthenticatedPostPostIdRouteImport } from './routes/_authenticated/post.$postId'
+import { Route as AuthenticatedViewButtonPagePageIdRouteImport } from './routes/_authenticated/view-button-page.$pageId'
 import { Route as AuthenticatedMessagesGroupGroupIdRouteImport } from './routes/_authenticated/messages.group.$groupId'
 import { Route as AuthenticatedStoryViewStoryIdRouteImport } from './routes/_authenticated/story.view.$storyId'
 import { Route as AuthenticatedUUsernameIndexRouteImport } from './routes/_authenticated/u.$username/index'
@@ -84,6 +86,12 @@ const AuthenticatedStoryRoute = AuthenticatedStoryRouteImport.update({
   path: '/story',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedButtonPagePageIdRoute =
+  AuthenticatedButtonPagePageIdRouteImport.update({
+    id: '/button-page/$pageId',
+    path: '/button-page/$pageId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMessagesIndexRoute =
   AuthenticatedMessagesIndexRouteImport.update({
     id: '/messages/',
@@ -101,6 +109,12 @@ const AuthenticatedPostPostIdRoute = AuthenticatedPostPostIdRouteImport.update({
   path: '/post/$postId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedViewButtonPagePageIdRoute =
+  AuthenticatedViewButtonPagePageIdRouteImport.update({
+    id: '/view-button-page/$pageId',
+    path: '/view-button-page/$pageId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMessagesGroupGroupIdRoute =
   AuthenticatedMessagesGroupGroupIdRouteImport.update({
     id: '/messages/group/$groupId',
@@ -143,8 +157,10 @@ export interface FileRoutesByFullPath {
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/story': typeof AuthenticatedStoryRouteWithChildren
+  '/button-page/$pageId': typeof AuthenticatedButtonPagePageIdRoute
   '/messages/$userId': typeof AuthenticatedMessagesUserIdRoute
   '/post/$postId': typeof AuthenticatedPostPostIdRoute
+  '/view-button-page/$pageId': typeof AuthenticatedViewButtonPagePageIdRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
   '/messages/group/$groupId': typeof AuthenticatedMessagesGroupGroupIdRoute
   '/story/view/$storyId': typeof AuthenticatedStoryViewStoryIdRoute
@@ -163,8 +179,10 @@ export interface FileRoutesByTo {
   '/search': typeof AuthenticatedSearchRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/story': typeof AuthenticatedStoryRouteWithChildren
+  '/button-page/$pageId': typeof AuthenticatedButtonPagePageIdRoute
   '/messages/$userId': typeof AuthenticatedMessagesUserIdRoute
   '/post/$postId': typeof AuthenticatedPostPostIdRoute
+  '/view-button-page/$pageId': typeof AuthenticatedViewButtonPagePageIdRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
   '/messages/group/$groupId': typeof AuthenticatedMessagesGroupGroupIdRoute
   '/story/view/$storyId': typeof AuthenticatedStoryViewStoryIdRoute
@@ -185,8 +203,10 @@ export interface FileRoutesById {
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/story': typeof AuthenticatedStoryRouteWithChildren
+  '/_authenticated/button-page/$pageId': typeof AuthenticatedButtonPagePageIdRoute
   '/_authenticated/messages/$userId': typeof AuthenticatedMessagesUserIdRoute
   '/_authenticated/post/$postId': typeof AuthenticatedPostPostIdRoute
+  '/_authenticated/view-button-page/$pageId': typeof AuthenticatedViewButtonPagePageIdRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
   '/_authenticated/messages/group/$groupId': typeof AuthenticatedMessagesGroupGroupIdRoute
   '/_authenticated/story/view/$storyId': typeof AuthenticatedStoryViewStoryIdRoute
@@ -207,8 +227,10 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/story'
+    | '/button-page/$pageId'
     | '/messages/$userId'
     | '/post/$postId'
+    | '/view-button-page/$pageId'
     | '/messages/'
     | '/messages/group/$groupId'
     | '/story/view/$storyId'
@@ -227,8 +249,10 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/story'
+    | '/button-page/$pageId'
     | '/messages/$userId'
     | '/post/$postId'
+    | '/view-button-page/$pageId'
     | '/messages'
     | '/messages/group/$groupId'
     | '/story/view/$storyId'
@@ -248,8 +272,10 @@ export interface FileRouteTypes {
     | '/_authenticated/search'
     | '/_authenticated/settings'
     | '/_authenticated/story'
+    | '/_authenticated/button-page/$pageId'
     | '/_authenticated/messages/$userId'
     | '/_authenticated/post/$postId'
+    | '/_authenticated/view-button-page/$pageId'
     | '/_authenticated/messages/'
     | '/_authenticated/messages/group/$groupId'
     | '/_authenticated/story/view/$storyId'
@@ -343,6 +369,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/button-page/$pageId': {
+      id: '/_authenticated/button-page/$pageId'
+      path: '/button-page/$pageId'
+      fullPath: '/button-page/$pageId'
+      preLoaderRoute: typeof AuthenticatedButtonPagePageIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/messages/': {
       id: '/_authenticated/messages/'
       path: '/messages'
@@ -362,6 +395,13 @@ declare module '@tanstack/react-router' {
       path: '/post/$postId'
       fullPath: '/post/$postId'
       preLoaderRoute: typeof AuthenticatedPostPostIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/view-button-page/$pageId': {
+      id: '/_authenticated/view-button-page/$pageId'
+      path: '/view-button-page/$pageId'
+      fullPath: '/view-button-page/$pageId'
+      preLoaderRoute: typeof AuthenticatedViewButtonPagePageIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/messages/group/$groupId': {
@@ -422,8 +462,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStoryRoute: typeof AuthenticatedStoryRouteWithChildren
+  AuthenticatedButtonPagePageIdRoute: typeof AuthenticatedButtonPagePageIdRoute
   AuthenticatedMessagesUserIdRoute: typeof AuthenticatedMessagesUserIdRoute
   AuthenticatedPostPostIdRoute: typeof AuthenticatedPostPostIdRoute
+  AuthenticatedViewButtonPagePageIdRoute: typeof AuthenticatedViewButtonPagePageIdRoute
   AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
   AuthenticatedMessagesGroupGroupIdRoute: typeof AuthenticatedMessagesGroupGroupIdRoute
   AuthenticatedUUsernameFollowersRoute: typeof AuthenticatedUUsernameFollowersRoute
@@ -440,8 +482,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStoryRoute: AuthenticatedStoryRouteWithChildren,
+  AuthenticatedButtonPagePageIdRoute: AuthenticatedButtonPagePageIdRoute,
   AuthenticatedMessagesUserIdRoute: AuthenticatedMessagesUserIdRoute,
   AuthenticatedPostPostIdRoute: AuthenticatedPostPostIdRoute,
+  AuthenticatedViewButtonPagePageIdRoute:
+    AuthenticatedViewButtonPagePageIdRoute,
   AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
   AuthenticatedMessagesGroupGroupIdRoute:
     AuthenticatedMessagesGroupGroupIdRoute,

@@ -12,6 +12,7 @@ import { Plus, Trash2, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, uploadMedia } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
+import { Media } from "@/components/Media";
 
 type ButtonElement = {
   id: string;
@@ -71,7 +72,7 @@ function ButtonPageEditor() {
       
       setTitle(page.title);
       setDescription(page.description || "");
-      setElements(elementsData || []);
+      setElements((elementsData ?? []) as unknown as ButtonElement[]);
       
       return page;
     },
@@ -117,7 +118,7 @@ function ButtonPageEditor() {
             type: element.type,
             content: element.content,
             position: element.position,
-            link_button_id: element.link_button_id
+            link_button_id: element.link_button_id ?? null
           });
       }
     },
@@ -165,10 +166,12 @@ function ButtonPageEditor() {
 
   function moveElement(index: number, direction: 'up' | 'down') {
     const newElements = [...elements];
-    if (direction === 'up' && index > 0) {
-      [newElements[index], newElements[index - 1]] = [newElements[index - 1], newElements[index]];
-    } else if (direction === 'down' && index < elements.length - 1) {
-      [newElements[index], newElements[index + 1]] = [newElements[index + 1], newElements[index]];
+    const swapWith = direction === 'up' ? index - 1 : index + 1;
+    const a = newElements[index];
+    const b = newElements[swapWith];
+    if (a && b) {
+      newElements[index] = b;
+      newElements[swapWith] = a;
     }
     setElements(newElements.map((el, i) => ({ ...el, position: i })));
   }
@@ -300,7 +303,7 @@ function ButtonPageEditor() {
                       }}
                     />
                     {element.content.url && (
-                      <img src={element.content.url} alt="Uploaded" className="max-w-full h-32 object-cover rounded" />
+                      <Media path={element.content.url} className="max-w-full h-32 object-cover rounded" />
                     )}
                     <Input
                       value={element.content.caption}

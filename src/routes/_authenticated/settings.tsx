@@ -12,6 +12,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, uploadMedia, type Profile, getChatBubbleFromStorage, saveChatBubbleToStorage, unblockUser, getBlockedUsers } from "@/lib/postly";
 import { applyTheme, getTheme, setTheme, type Theme } from "@/lib/theme";
 
+const PRESET_GAMES = [
+  "Minecraft",
+  "Roblox",
+  "Genshin Impact",
+  "Mobile Legends",
+  "Fortnite",
+  "PUBG",
+  "Call of Duty",
+  "Free Fire",
+  "Among Us",
+  "Pokémon",
+  "Silver Palace",
+  "Until Then",
+  "Leaflet Love Story",
+  "I Fell in Love With the Girl Next to Me",
+  "Sekaira",
+];
+
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
@@ -32,12 +50,18 @@ function SettingsPage() {
   const [bio, setBio] = useState("");
   const [chatBubbleText, setChatBubbleText] = useState("");
   const [chatBubbleEnabled, setChatBubbleEnabled] = useState(false);
-  const [chatBubbleMusicVideoId, setChatBubbleMusicVideoId] = useState("");
-  const [chatBubbleMusicTitle, setChatBubbleMusicTitle] = useState("");
+  const [chatBubbleMusicVideoId, setChatBubbleMusicVideoId] = useState<string | "">("");
+  const [chatBubbleMusicTitle, setChatBubbleMusicTitle] = useState<string | "">("");
+  const [chatBubbleMusicClipStart, setChatBubbleMusicClipStart] = useState<number | null>(null);
+  const [chatBubbleMusicClipEnd, setChatBubbleMusicClipEnd] = useState<number | null>(null);
   const [profileViewHistoryEnabled, setProfileViewHistoryEnabled] = useState(true);
+  const [favoriteGames, setFavoriteGames] = useState<string[]>([]);
+  const [newGameInput, setNewGameInput] = useState<string | "">("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const taps = useRef(0);
+  const hasClipColumnsRef = useRef(true);
+  const hasFavoriteGamesRef = useRef(true);
 
   useEffect(() => {
     const theme = getTheme();
@@ -52,11 +76,16 @@ function SettingsPage() {
         const uid = await currentUserId();
         const { data, error } = await supabase
           .from("profiles")
-          .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,chat_bubble_music_video_id,chat_bubble_music_title,profile_view_history_enabled")
+          .select("*")
           .eq("id", uid)
           .maybeSingle();
         if (error) throw error;
         const p = data as Profile | null;
+        // The music-clip columns are added by migration
+        // 20260917_add_music_clip_to_profiles.sql; skip them in the update
+        // payload until the migration has been applied to the database.
+        hasClipColumnsRef.current = p ? "chat_bubble_music_clip_start" in p : false;
+        hasFavoriteGamesRef.current = p ? "favorite_games" in p : false;
         setName(p?.display_name ?? "");
         setBio(p?.bio ?? "");
         
@@ -69,10 +98,13 @@ function SettingsPage() {
         setChatBubbleEnabled(dbBubbleEnabled ?? localBubble?.enabled ?? false);
         setChatBubbleMusicVideoId(p?.chat_bubble_music_video_id ?? "");
         setChatBubbleMusicTitle(p?.chat_bubble_music_title ?? "");
+        setChatBubbleMusicClipStart(p?.chat_bubble_music_clip_start ?? null);
+        setChatBubbleMusicClipEnd(p?.chat_bubble_music_clip_end ?? null);
         setProfileViewHistoryEnabled(p?.profile_view_history_enabled ?? true);
+        setFavoriteGames(p?.favorite_games ?? []);
         return p;
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(e instanceof Error ? e.message : ((e as { message?: string })?.message ?? String(e)));
         throw e;
       }
     },
@@ -118,7 +150,17 @@ function SettingsPage() {
           chat_bubble_music_title: chatBubbleMusicTitle,
           profile_view_history_enabled: profileViewHistoryEnabled,
           ...(avatar_url && !isBanner ? { avatar_url } : {}),
-          ...(avatar_url && isBanner ? { banner_url: avatar_url } : {})
+          ...(avatar_url && isBanner ? { banner_url: avatar_url } : {}),
+          // Music-clip columns are added by migration
+          // 20260917_add_music_clip_to_profiles.sql; only send them once the
+          // migration has been applied (detected at profile load).
+          ...(hasClipColumnsRef.current
+            ? {
+                chat_bubble_music_clip_start: chatBubbleMusicClipStart,
+                chat_bubble_music_clip_end: chatBubbleMusicClipEnd,
+              }
+            : {}),
+          ...(hasFavoriteGamesRef.current ? { favorite_games: favoriteGames } : {}),
         })
         .eq("id", me.id);
       
@@ -143,18 +185,20 @@ function SettingsPage() {
     }
   }
 
+  const errorText = (e: unknown) => e instanceof Error ? e.message : ((e as { message?: string })?.message ?? String(e));
+
   return (
     <AppShell title="Settings">
       {(error || queryError) && (
         <div className="mb-4 rounded-lg border border-red-500 bg-red-50 p-4 dark:bg-red-950/20">
           <h3 className="font-semibold text-red-900 dark:text-red-100">Error loading settings</h3>
-          <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error || (queryError instanceof Error ? queryError.message : String(queryError))}</p>
+          <p className="mt-1 text-sm text-red-700 dark:text-red-300">{errorText(error || queryError)}</p>
           <Button
             variant="outline"
             size="sm"
             className="mt-2"
             onClick={() => {
-              navigator.clipboard.writeText(error || (queryError instanceof Error ? queryError.message : String(queryError)));
+              navigator.clipboard.writeText(errorText(error || queryError));
               alert("Error copied to clipboard");
             }}
           >
@@ -238,6 +282,8 @@ function SettingsPage() {
                 <Button variant="outline" size="sm" onClick={() => {
                   setChatBubbleMusicVideoId("");
                   setChatBubbleMusicTitle("");
+                  setChatBubbleMusicClipStart(null);
+                  setChatBubbleMusicClipEnd(null);
                   void save();
                 }}>
                   Remove Music
@@ -247,10 +293,65 @@ function SettingsPage() {
               <MusicPicker onPick={(m: MusicPick) => {
                 setChatBubbleMusicVideoId(m.videoId);
                 setChatBubbleMusicTitle(m.title);
+                void save();
               }} />
             )}
           </div>
-          <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
+                    <Button onClick={() => void save()}>{saved ? "Saved" : "Save"}</Button>
+        </section>
+
+        <section className="space-y-3 rounded-2xl border p-4">
+          <h2 className="font-semibold">Favorite Games</h2>
+          <p className="text-xs text-muted-foreground">Select or unselect games to show on your profile. You can also add custom games.</p>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Add Custom Game</label>
+            <div className="flex gap-2">
+              <Input
+                value={newGameInput}
+                onChange={(e) => setNewGameInput(e.target.value)}
+                placeholder="Type game name here..."
+                maxLength={50}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const trimmed = newGameInput.trim();
+                  if (trimmed && !favoriteGames.includes(trimmed)) {
+                    setFavoriteGames([...favoriteGames, trimmed]);
+                    setNewGameInput("");
+                    void save();
+                  }
+                }}
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Preset Games</label>
+            <div className="flex flex-wrap gap-2">
+              {PRESET_GAMES.map((game) => (
+                <Button
+                  key={game}
+                  variant={favoriteGames.includes(game) ? "default" : "outline"}
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => {
+                    const updated = favoriteGames.includes(game)
+                      ? favoriteGames.filter((g) => g !== game)
+                      : [...favoriteGames, game];
+                    setFavoriteGames(updated);
+                    void save();
+                  }}
+                >
+                  {game}
+                </Button>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className="space-y-3 rounded-2xl border p-4">
@@ -336,10 +437,9 @@ function SettingsPage() {
             onClick={async () => {
               if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
                 const uid = await currentUserId();
-                // Delete all user data
                 await supabase.from("stories").delete().eq("user_id", uid);
                 await supabase.from("posts").delete().eq("user_id", uid);
-                await supabase.from("messages").delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`);
+                await supabase.from("messages").delete().or(`sender_id.eq.${uid},recipient_id.eq.${uid}`);
                 await supabase.from("follows").delete().or(`follower_id.eq.${uid},following_id.eq.${uid}`);
                 await supabase.from("love_answers").delete().eq("user_id", uid);
                 await supabase.from("profiles").delete().eq("id", uid);

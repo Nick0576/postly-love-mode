@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { X, ExternalLink } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/PostCard";
 import { YouTubeMusicPlayer } from "@/components/YouTubeMusicPlayer";
+import { MusicPicker, type MusicPick } from "@/components/MusicPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, signedUrl, type Profile, isUserOnline, recordProfileView, getProfileViews, timeAgo, cleanupOldProfileViews, blockUser, unblockUser, isUserBlocked } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
@@ -35,29 +36,39 @@ function ProfilePage() {
     applyTheme(getTheme());
   }, []);
 
-  const { data } = useQuery({
+  const { data, error: profileError, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", username],
     queryFn: async () => {
       const me = await currentUserId();
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from("profiles")
-        .select("id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,chat_bubble_music_video_id,chat_bubble_music_title,last_seen,is_online,profile_view_history_enabled")
+        .select("*")
         .eq("username", username)
         .maybeSingle();
+      if (error) throw error;
       if (!profile) return null;
       const p = profile as Profile;
-      const [posts, following, followers, followingCount, followsBack, loveAnswers, blocked] = await Promise.all([
+      const [posts, following, followers, followingCount, followsBack, loveAnswers, myLoveAnswers, blocked] = await Promise.all([
         supabase.from("posts").select(POST_SELECT).eq("user_id", p.id).order("is_pinned", { ascending: false }).order("created_at", { ascending: false }).limit(20),
         supabase.from("follows").select("following_id").eq("follower_id", me),
         supabase.from("follows").select("follower_id").eq("following_id", me),
         supabase.from("follows").select("follower_id").eq("following_id", p.id),
         supabase.from("follows").select("follower_id").eq("follower_id", p.id),
         supabase.from("love_answers").select("answers").eq("user_id", p.id).maybeSingle(),
+        supabase.from("love_answers").select("answers").eq("user_id", me).maybeSingle(),
         supabase.from("blocks").select("blocked_id").eq("blocker_id", me).eq("blocked_id", p.id).maybeSingle()
       ]);
       const followingSet = new Set((following?.data ?? []).map((r) => r.following_id));
       const followersSet = new Set((followers?.data ?? []).map((r) => r.follower_id));
-      const loveMatch = loveAnswers ? null : null; // Will calculate if both have answers
+      let loveMatch: number | null = null;
+      if (loveAnswers?.data && myLoveAnswers?.data) {
+        const theirs = (loveAnswers.data as { answers: number[] }).answers ?? [];
+        const mine = (myLoveAnswers.data as { answers: number[] }).answers ?? [];
+        if (mine.length > 0 && theirs.length > 0) {
+          const same = mine.filter((a, i) => a !== -1 && a === theirs[i]).length;
+          loveMatch = Math.round((same / mine.length) * 100);
+        }
+      }
       return {
         me,
         profile: p,
@@ -66,9 +77,10 @@ function ProfilePage() {
         isMutual: followingSet.has(p.id) && followersSet.has(p.id),
         followingCount: followingCount?.data?.length ?? 0,
         followersCount: followers?.data?.length ?? 0,
-        followsBack: followsBack?.data?.length > 0,
+        followsBack: (followsBack?.data?.length ?? 0) > 0,
         loveMatch,
-        isBlocked: !!blocked?.data
+        isBlocked: !!blocked?.data,
+        favoriteGames: p.favorite_games ?? []
       };
     },
   });
@@ -223,6 +235,24 @@ function ProfilePage() {
     }
   }, [data]);
 
+  if (profileLoading) {
+    return (
+      <AppShell title="Profile">
+        <p className="text-sm text-muted-foreground">Loading profile...</p>
+      </AppShell>
+    );
+  }
+
+  if (profileError) {
+    const msg = profileError instanceof Error ? profileError.message : ((profileError as { message?: string })?.message ?? String(profileError));
+    return (
+      <AppShell title="Profile">
+        <p className="text-sm text-red-600">Error loading profile: {msg}</p>
+        <p className="text-xs text-muted-foreground mt-2">If this mentions favorite_games, the database migration has not been applied yet. Run pnpm db:migrate.</p>
+      </AppShell>
+    );
+  }
+
   if (data === null) {
     return (
       <AppShell title="Profile">
@@ -231,8 +261,16 @@ function ProfilePage() {
     );
   }
 
+  if (!data || !data.profile) {
+    return (
+      <AppShell title="Profile">
+        <p className="text-sm text-muted-foreground">No profile data.</p>
+      </AppShell>
+    );
+  }
+
   return (
-    <AppShell title={data?.profile ? `@${data.profile.username}` : "Profile"}>
+    <AppShell title={`@${data.profile.username}`}>
       {data && data.profile && (
         <>
           <div className="rounded-2xl border p-4 shadow-soft">
@@ -267,7 +305,7 @@ function ProfilePage() {
                 <div className="flex items-center gap-2 mt-1">
                   <Button variant="outline" size="sm" className="h-7" asChild>
                     <Link to="/u/$username/followers" params={{ username: data.profile.username }}>
-                      {data.followers} followers
+                      {data.followersCount} followers
                     </Link>
                   </Button>
                   <Button variant="outline" size="sm" className="h-7" asChild>
@@ -282,6 +320,15 @@ function ProfilePage() {
               </div>
             </div>
             {data.profile.bio && <p className="mt-3 text-sm">{data.profile.bio}</p>}
+            {data.favoriteGames && data.favoriteGames.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {data.favoriteGames.map((game) => (
+                  <span key={game} className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                    🎮 {game}
+                  </span>
+                ))}
+              </div>
+            )}
             {data.me !== data.profile.id && (
               <div className="mt-4 flex gap-2 flex-wrap">
                 <Button onClick={() => toggle.mutate()} variant={data.isFollowing ? "outline" : "default"}>
@@ -301,6 +348,7 @@ function ProfilePage() {
               </div>
             )}
           </div>
+          <FavoriteSongs userId={data.profile.id} isOwner={data.me === data.profile.id} />
           {data.isMutual && (
             <div className="mt-4 rounded-2xl border p-4 bg-gradient-to-r from-pink-50 to-red-50 dark:from-pink-950/20 dark:to-red-950/20">
               <div className="flex items-center gap-3">
@@ -415,6 +463,10 @@ function ProfilePage() {
                     videoId={data.profile.chat_bubble_music_video_id}
                     title={data.profile.chat_bubble_music_title ?? null}
                     autoplay={true}
+                    previewDuration={30}
+                    clipStart={data.profile.chat_bubble_music_clip_start ?? null}
+                    clipEnd={data.profile.chat_bubble_music_clip_end ?? null}
+                    hideControls
                   />
                 </div>
               )}
@@ -441,5 +493,122 @@ function Banner({ url }: { url: string }) {
       alt="Banner" 
       className="w-full h-full object-cover"
     />
+  );
+}
+
+function FavoriteSongs({ userId, isOwner }: { userId: string; isOwner: boolean }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [nowPlaying, setNowPlaying] = useState<{ videoId: string; title: string } | null>(null);
+
+  const { data: songs } = useQuery({
+    queryKey: ["favorite-songs", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("favorite_songs")
+        .select("id,video_id,title")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: open,
+  });
+
+  const add = useMutation({
+    mutationFn: async (m: MusicPick) => {
+      const uid = await currentUserId();
+      const { error } = await supabase
+        .from("favorite_songs")
+        .insert({ user_id: uid, video_id: m.videoId, title: m.title });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setAdding(false);
+      void qc.invalidateQueries({ queryKey: ["favorite-songs", userId] });
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("favorite_songs").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["favorite-songs", userId] }),
+  });
+
+  return (
+    <div className="mt-4 rounded-2xl border p-4">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-semibold">🎵 Favorite songs</h3>
+        <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)}>
+          {open ? "Hide" : "Show"}
+        </Button>
+      </div>
+
+      {open && (
+        <div className="mt-3 space-y-3">
+          {isOwner && (
+            adding ? (
+              <div className="space-y-2">
+                <MusicPicker onPick={(m) => add.mutate(m)} />
+                <Button variant="ghost" size="sm" onClick={() => setAdding(false)}>
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" onClick={() => setAdding(true)}>
+                Add song
+              </Button>
+            )
+          )}
+
+          {songs && songs.length > 0 ? (
+            <ul className="space-y-2">
+              {songs.map((s) => (
+                <li key={s.id} className="flex items-center gap-2 rounded-lg border p-2">
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 truncate text-left text-sm"
+                    onClick={() => setNowPlaying({ videoId: s.video_id, title: s.title })}
+                  >
+                    {s.title}
+                  </button>
+                  {isOwner && (
+                    <Button variant="ghost" size="sm" onClick={() => remove.mutate(s.id)}>
+                      Delete
+                    </Button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">No favorite songs yet.</p>
+          )}
+
+          {nowPlaying && (
+            <div className="space-y-2">
+<YouTubeMusicPlayer
+                key={nowPlaying.videoId}
+                videoId={nowPlaying.videoId}
+                title={nowPlaying.title}
+                autoplay={true}
+                previewDuration={30}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => window.open("https://drive.google.com/file/d/13bZbdTY6SJlwkL74yzBvWNZAFvQ1k27L/view?usp=drivesdk", "_blank")}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Play full song in TipTop Music
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

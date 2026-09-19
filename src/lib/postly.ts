@@ -11,6 +11,9 @@ export type Profile = {
   chat_bubble_enabled: boolean;
   chat_bubble_music_video_id?: string | null;
   chat_bubble_music_title?: string | null;
+  chat_bubble_music_clip_start?: number | null;
+  chat_bubble_music_clip_end?: number | null;
+  favorite_games?: string[] | null;
   last_seen: string | null;
   is_online: boolean;
   profile_view_history_enabled: boolean;
@@ -53,7 +56,7 @@ export type PostRow = {
 };
 
 export const POST_SELECT =
-  "id,user_id,content,media_url,created_at,is_pinned,profiles(id,username,display_name,bio,avatar_url,banner_url,chat_bubble_text,chat_bubble_enabled,last_seen,is_online,profile_view_history_enabled)";
+  "id,user_id,content,media_url,created_at,is_pinned,profiles(*)";
 
 export async function currentUserId(): Promise<string> {
   const { data } = await supabase.auth.getUser();
@@ -345,4 +348,102 @@ export async function isUserBlocked(blockedUserId: string): Promise<boolean> {
     .single();
   if (error && error.code !== "PGRST116") throw error; // PGRST116 = not found
   return !!data;
+}
+
+// Chat list metadata (unread/muted/archived) persistence
+const CHAT_META_KEY = "postly-chat-list-meta";
+
+function getAllChatMeta(): Record<string, { unread?: boolean; muted?: boolean; archived?: boolean; pinned?: boolean }> {
+  if (typeof localStorage === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(CHAT_META_KEY) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+
+export function getChatMeta(id: string): { unread: boolean; muted: boolean; archived: boolean; pinned: boolean } {
+  const all = getAllChatMeta();
+  const m = all[id] || {};
+  return { unread: !!m.unread, muted: !!m.muted, archived: !!m.archived, pinned: !!m.pinned };
+}
+
+export function setChatMeta(id: string, patch: Partial<{ unread: boolean; muted: boolean; archived: boolean; pinned: boolean }>): void {
+  const all = getAllChatMeta();
+  all[id] = { ...all[id], ...patch };
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(CHAT_META_KEY, JSON.stringify(all));
+  }
+}
+
+// Chat background utilities (per-conversation, DB + localStorage fallback)
+const CHAT_BG_LS_PREFIX = "postly-chat-bg-";
+export const CHAT_BACKGROUNDS = [
+  { id: "default", label: "Default", path: null },
+  { id: "bg1", label: "Background 1", path: "/chat-backgrounds/bg1.jpg" },
+  { id: "bg2", label: "Background 2", path: "/chat-backgrounds/bg2.jpg" },
+  { id: "bg3", label: "Background 3", path: "/chat-backgrounds/bg3.jpg" },
+  { id: "bg4", label: "Background 4", path: "/chat-backgrounds/bg4.jpg" },
+  { id: "bg5", label: "Background 5", path: "/chat-backgrounds/bg5.jpg" },
+  { id: "bg6", label: "Background 6", path: "/chat-backgrounds/bg6.jpg" },
+  { id: "bg7", label: "Background 7", path: "/chat-backgrounds/bg7.jpg" },
+  { id: "bg8", label: "Background 8", path: "/chat-backgrounds/bg8.jpg" },
+] as const;
+
+function getChatBackgroundLocal(key: string): string | null {
+  if (typeof localStorage === "undefined") return null;
+  try { return localStorage.getItem(CHAT_BG_LS_PREFIX + key); } catch { return null; }
+}
+
+function setChatBackgroundLocal(key: string, path: string | null): void {
+  if (typeof localStorage === "undefined") return;
+  const fullKey = CHAT_BG_LS_PREFIX + key;
+  if (path) localStorage.setItem(fullKey, path);
+  else localStorage.removeItem(fullKey);
+}
+
+export async function getChatBackground(
+  conversationType: "dm" | "group",
+  conversationId: string,
+): Promise<string | null> {
+  const lsKey = `${conversationType}-${conversationId}`;
+  try {
+    const uid = await currentUserId();
+    const { data } = await (supabase as any)
+      .from("chat_backgrounds")
+      .select("background_path")
+      .eq("user_id", uid)
+      .eq("conversation_type", conversationType)
+      .eq("conversation_id", conversationId)
+      .maybeSingle();
+    const dbPath = data?.background_path ?? null;
+    if (dbPath !== getChatBackgroundLocal(lsKey)) setChatBackgroundLocal(lsKey, dbPath);
+    return dbPath;
+  } catch {
+    return getChatBackgroundLocal(lsKey);
+  }
+}
+
+export async function saveChatBackground(
+  conversationType: "dm" | "group",
+  conversationId: string,
+  backgroundPath: string | null,
+): Promise<void> {
+  const lsKey = `${conversationType}-${conversationId}`;
+  setChatBackgroundLocal(lsKey, backgroundPath);
+  try {
+    const uid = await currentUserId();
+    const { error } = await (supabase as any).from("chat_backgrounds").upsert(
+      {
+        user_id: uid,
+        conversation_type: conversationType,
+        conversation_id: conversationId,
+        background_path: backgroundPath,
+      },
+      { onConflict: "user_id,conversation_type,conversation_id" },
+    );
+    if (error) throw error;
+  } catch {
+    // localStorage fallback already saved
+  }
 }
