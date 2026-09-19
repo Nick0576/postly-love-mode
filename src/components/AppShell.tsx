@@ -24,9 +24,9 @@ export function AppShell({ title, children, headerAction }: { title: ReactNode; 
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [navPage, setNavPage] = useState(1);
   const startY = useRef(0);
   const isPulling = useRef(false);
-  const navScrollRef = useRef<HTMLDivElement>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
@@ -55,18 +55,6 @@ export function AppShell({ title, children, headerAction }: { title: ReactNode; 
     setPullDistance(0);
   };
 
-  const scrollLeft = () => {
-    if (navScrollRef.current) {
-      navScrollRef.current.scrollBy({ left: -150, behavior: 'smooth' });
-    }
-  };
-
-  const scrollRight = () => {
-    if (navScrollRef.current) {
-      navScrollRef.current.scrollBy({ left: 150, behavior: 'smooth' });
-    }
-  };
-
   return (
     <div 
       className="min-h-screen bg-background"
@@ -91,28 +79,17 @@ export function AppShell({ title, children, headerAction }: { title: ReactNode; 
       <main className="mx-auto w-full max-w-xl px-4 pb-28 pt-4">{children}</main>
       <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-xl items-center gap-2 px-4 py-2">
-          <button
-            onClick={scrollLeft}
-            className="flex flex-col items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <div
-            ref={navScrollRef}
-            className="flex-1 flex items-center gap-1 overflow-x-auto scrollbar-hide"
-            style={{ scrollBehavior: 'smooth' }}
-          >
-            {allItems.map((item) => (
-              item.isButton ? (
-                <button
-                  key={item.to}
-                  onClick={() => setAiModalOpen(true)}
-                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-xs text-muted-foreground whitespace-nowrap"
-                >
-                  <item.Icon className="h-5 w-5" />
-                  {item.label}
-                </button>
-              ) : (
+          {navPage === 2 && (
+            <button
+              onClick={() => setNavPage(1)}
+              className="flex flex-col items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          )}
+          <div className="flex-1 flex items-center justify-center gap-1">
+            {navPage === 1 ? (
+              mainItems.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
@@ -123,15 +100,39 @@ export function AppShell({ title, children, headerAction }: { title: ReactNode; 
                   <item.Icon className="h-5 w-5" />
                   {item.label}
                 </Link>
-              )
-            ))}
+              ))
+            ) : (
+              <>
+                <button
+                  onClick={() => setAiModalOpen(true)}
+                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-xs text-muted-foreground whitespace-nowrap"
+                >
+                  <Bot className="h-5 w-5" />
+                  AI
+                </button>
+                {extraItems.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    activeProps={{ className: "text-primary" }}
+                    inactiveProps={{ className: "text-muted-foreground" }}
+                    className="flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-xs whitespace-nowrap"
+                  >
+                    <item.Icon className="h-5 w-5" />
+                    {item.label}
+                  </Link>
+                ))}
+              </>
+            )}
           </div>
-          <button
-            onClick={scrollRight}
-            className="flex flex-col items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
+          {navPage === 1 && (
+            <button
+              onClick={() => setNavPage(2)}
+              className="flex flex-col items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </nav>
 
