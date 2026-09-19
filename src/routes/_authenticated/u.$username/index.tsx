@@ -243,9 +243,10 @@ function ProfilePage() {
       void qc.invalidateQueries({ queryKey: ["profile", username] });
       setEditingGames(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Save failed:", error);
-      alert("Failed to save favorite games: " + (error instanceof Error ? error.message : String(error)));
+      const errorMessage = error?.message || error?.error?.message || JSON.stringify(error);
+      alert("Failed to save favorite games: " + errorMessage);
     },
   });
 
