@@ -97,6 +97,19 @@ function ProfilePage() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["profile", username] }),
   });
 
+  const archivePost = useMutation({
+    mutationFn: async (postId: string) => {
+      const { error } = await supabase
+        .from("archived_posts")
+        .insert({ user_id: data?.me, post_id: postId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["profile", username] });
+      void qc.invalidateQueries({ queryKey: ["archived-posts"] });
+    },
+  });
+
   const blockMutation = useMutation({
     mutationFn: async () => {
       if (!data) return;
@@ -403,6 +416,13 @@ function ProfilePage() {
               <PostCard
                 key={p.id}
                 post={p}
+                onArchive={
+                  data.me === data.profile.id
+                    ? () => {
+                        if (confirm("Archive this post?")) archivePost.mutate(p.id);
+                      }
+                    : undefined
+                }
                 onDelete={
                   data.me === data.profile.id
                     ? () => {
