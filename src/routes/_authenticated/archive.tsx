@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Media";
 import { Button } from "@/components/ui/button";
-import { Archive, ArchiveX } from "lucide-react";
+import { Archive, ArchiveX, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId, timeAgo } from "@/lib/postly";
 import { applyTheme, getTheme } from "@/lib/theme";
@@ -22,6 +22,8 @@ export const Route = createFileRoute("/_authenticated/archive")({
 });
 
 function ArchivePage() {
+  const qc = useQueryClient();
+
   useEffect(() => {
     applyTheme(getTheme());
   }, []);
@@ -49,6 +51,19 @@ function ArchivePage() {
         .eq("user_id", uid);
       if (error) throw error;
       return data || [];
+    },
+  });
+
+  const unarchivePost = useMutation({
+    mutationFn: async (archiveId: string) => {
+      const { error } = await supabase
+        .from("archived_posts")
+        .delete()
+        .eq("id", archiveId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["archived-posts"] });
     },
   });
 
@@ -107,16 +122,25 @@ function ArchivePage() {
                     <span className="text-xs text-muted-foreground">· {timeAgo(archived.created_at)}</span>
                   </div>
                   <p className="text-sm whitespace-pre-wrap">{archived.posts?.content}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                    asChild
-                  >
-                    <Link to="/post/$postId" params={{ postId: archived.post_id }}>
-                      View
-                    </Link>
-                  </Button>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                    >
+                      <Link to="/post/$postId" params={{ postId: archived.post_id }}>
+                        View
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => unarchivePost.mutate(archived.id)}
+                    >
+                      <ArchiveX className="h-4 w-4 mr-2" />
+                      Unarchive
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

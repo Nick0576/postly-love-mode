@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { MessageCircle, Heart, Pin, Pencil, Trash2, MoreVertical } from "lucide-react";
+import { MessageCircle, Heart, Pin, Pencil, Trash2, MoreVertical, Archive } from "lucide-react";
 import { Avatar, Media } from "@/components/Media";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +20,7 @@ type ButtonData = {
   button_page_id: string;
 };
 
-export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, isPinned, onTogglePin, onEdit, button }: {
+export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, isPinned, onTogglePin, onEdit, button, onArchive }: {
   post: PostRow;
   onDelete?: (() => void) | undefined;
   hasLiked?: boolean | undefined;
@@ -30,6 +30,7 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
   onTogglePin?: (() => void) | undefined;
   onEdit?: (() => void | Promise<void>) | undefined;
   button?: ButtonData | undefined;
+  onArchive?: (() => void) | undefined;
 }) {
   const author = post.profiles;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -108,6 +109,17 @@ export function PostCard({ post, onDelete, hasLiked, likeCount, onToggleLike, is
             }}>
               <Pin className={`h-4 w-4 mr-2 ${isPinned ? "fill-current" : ""}`} />
               {isPinned ? "Unpin" : "Pin"}
+            </DropdownMenuItem>
+          )}
+          {onArchive && (
+            <DropdownMenuItem onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onArchive();
+              setMenuOpen(false);
+            }}>
+              <Archive className="h-4 w-4 mr-2" />
+              Archive
             </DropdownMenuItem>
           )}
           {onEdit && (

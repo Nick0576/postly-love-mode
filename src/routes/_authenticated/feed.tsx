@@ -80,6 +80,20 @@ function Feed() {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["feed"] }),
   });
 
+  const archivePost = useMutation({
+    mutationFn: async (postId: string) => {
+      const uid = await currentUserId();
+      const { error } = await supabase
+        .from("archived_posts")
+        .insert({ user_id: uid, post_id: postId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["feed"] });
+      void qc.invalidateQueries({ queryKey: ["archived-posts"] });
+    },
+  });
+
   const toggleLike = useMutation({
     mutationFn: async ({ postId, hasLiked }: { postId: string; hasLiked: boolean }) => {
       const uid = await currentUserId();
@@ -257,6 +271,13 @@ function Feed() {
             key={p.id}
             post={p}
             button={(p as any).buttons?.[0]}
+            onArchive={
+              p.user_id === me
+                ? () => {
+                    if (confirm("Archive this post?")) archivePost.mutate(p.id);
+                  }
+                : undefined
+            }
             onDelete={
               p.user_id === me
                 ? () => {
