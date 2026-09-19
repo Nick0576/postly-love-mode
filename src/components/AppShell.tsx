@@ -148,7 +148,7 @@ export function AppShell({ title, children, headerAction }: { title: ReactNode; 
             </div>
             <div className="space-y-4">
               <div className="rounded-lg border p-4">
-                <h3 className="font-semibold mb-2">Free</h3>
+                <h3 className="font-semibold mb-2">Free - Seeklina</h3>
                 <a
                   href="https://baybayin-ai-chat.lovable.app"
                   target="_blank"
@@ -159,7 +159,7 @@ export function AppShell({ title, children, headerAction }: { title: ReactNode; 
                 </a>
               </div>
               <div className="rounded-lg border p-4">
-                <h3 className="font-semibold mb-2">Paid - ₱80</h3>
+                <h3 className="font-semibold mb-2">Paid - Seeklina Pro (₱80)</h3>
                 <p className="text-sm text-muted-foreground mb-2">Chat me on Facebook Messenger to get it</p>
                 <a
                   href="https://www.facebook.com/profile.php?id=61575424813244"
