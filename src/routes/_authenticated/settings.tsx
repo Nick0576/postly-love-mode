@@ -79,7 +79,6 @@ function SettingsPage() {
         setChatBubbleMusicClipStart(p?.chat_bubble_music_clip_start ?? null);
         setChatBubbleMusicClipEnd(p?.chat_bubble_music_clip_end ?? null);
         setProfileViewHistoryEnabled(p?.profile_view_history_enabled ?? true);
-        setFavoriteGames(p?.favorite_games ?? []);
         return p;
       } catch (e) {
         setError(e instanceof Error ? e.message : ((e as { message?: string })?.message ?? String(e)));
@@ -113,9 +112,6 @@ function SettingsPage() {
   async function save(avatar_url?: string, isBanner?: boolean) {
     if (!me) return;
     try {
-      console.log("Saving favorite games:", favoriteGames);
-      console.log("Has favorite games column:", hasFavoriteGamesRef.current);
-      
       // Save to localStorage as fallback
       saveChatBubbleToStorage(chatBubbleText, chatBubbleEnabled);
       
@@ -143,8 +139,6 @@ function SettingsPage() {
             : {}),
         })
         .eq("id", me.id);
-      
-      console.log("Save error:", error);
       
       // If database update fails, still show success since localStorage saved
       if (error) {
