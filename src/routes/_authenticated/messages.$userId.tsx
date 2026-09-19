@@ -223,7 +223,7 @@ function Chat() {
   }
 
   function startVideoCall() {
-    alert("Video call feature coming soon!");
+    navigate({ to: "/video-call/$userId", params: { userId } });
   }
 
   const deleteMessage = useMutation({

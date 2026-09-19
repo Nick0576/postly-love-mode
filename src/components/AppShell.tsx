@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Search, PlusSquare, MessageSquare, Settings, RefreshCw, Bot, X } from "lucide-react";
+import { Home, Search, PlusSquare, MessageSquare, Settings, RefreshCw, Bot, X, Archive } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState, useRef } from "react";
 import icon from "@/assets/postly-icon.png.asset.json";
@@ -11,6 +11,7 @@ const items = [
   { to: "/search", label: "Search", Icon: Search },
   { to: "/compose", label: "Post", Icon: PlusSquare },
   { to: "/messages", label: "Chats", Icon: MessageSquare },
+  { to: "/archive", label: "Archive", Icon: Archive },
   { to: "/settings", label: "Settings", Icon: Settings },
 ] as const;
 
@@ -94,6 +95,15 @@ export function AppShell({ title, children, headerAction }: { title: ReactNode; 
             >
               <Bot className="h-6 w-6" />
             </button>
+            <Link
+              to="/archive"
+              activeProps={{ className: "text-primary" }}
+              inactiveProps={{ className: "text-muted-foreground" }}
+              className="flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-xs"
+            >
+              <Archive className="h-5 w-5" />
+              Archive
+            </Link>
             <Link
               to="/settings"
               activeProps={{ className: "text-primary" }}
