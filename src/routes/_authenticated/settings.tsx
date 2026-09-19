@@ -135,6 +135,9 @@ function SettingsPage() {
   async function save(avatar_url?: string, isBanner?: boolean) {
     if (!me) return;
     try {
+      console.log("Saving favorite games:", favoriteGames);
+      console.log("Has favorite games column:", hasFavoriteGamesRef.current);
+      
       // Save to localStorage as fallback
       saveChatBubbleToStorage(chatBubbleText, chatBubbleEnabled);
       
@@ -163,6 +166,8 @@ function SettingsPage() {
           ...(hasFavoriteGamesRef.current ? { favorite_games: favoriteGames } : {}),
         })
         .eq("id", me.id);
+      
+      console.log("Save error:", error);
       
       // If database update fails, still show success since localStorage saved
       if (error) {

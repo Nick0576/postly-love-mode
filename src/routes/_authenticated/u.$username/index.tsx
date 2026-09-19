@@ -80,7 +80,7 @@ function ProfilePage() {
         followsBack: (followsBack?.data?.length ?? 0) > 0,
         loveMatch,
         isBlocked: !!blocked?.data,
-        favoriteGames: p.favorite_games ?? []
+        favoriteGames: (p.favorite_games as string[] | null) ?? []
       };
     },
   });
